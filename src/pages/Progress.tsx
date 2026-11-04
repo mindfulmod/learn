@@ -7,6 +7,7 @@ import { buildFeedback } from '../engine/feedback'
 import { buildProfile, streak } from '../engine/profile'
 import { useStore } from '../store/store'
 import { Empty, FeedbackCard, LevelBadge, Meter } from '../components/ui'
+import { AREA_META, subjectEmoji, tint } from '../design'
 
 export function Progress() {
   const { state } = useStore()
@@ -18,26 +19,36 @@ export function Progress() {
 
   return (
     <>
+      <span className="kicker">Growth</span>
       <h1>Progress</h1>
-      <p className="muted">Where you stand, where you are growing, and what to do next.</p>
+      <p className="lead">Where you stand, where you are growing, and what to do next.</p>
 
       <div className="grid cols-3 section">
-        <div className="card stat">
-          <b>{state.attempts.length}</b>
-          <span>practice rounds</span>
+        <div className="card stat" style={tint(258)}>
+          <span className="icon">🧩</span>
+          <div>
+            <b>{state.attempts.length}</b>
+            <span>practice rounds</span>
+          </div>
         </div>
-        <div className="card stat">
-          <b>{profile.totalItems ? Math.round((state.attempts.reduce((s, a) => s + a.correct, 0) / profile.totalItems) * 100) : 0}%</b>
-          <span>overall accuracy</span>
+        <div className="card stat" style={tint(160)}>
+          <span className="icon">🎯</span>
+          <div>
+            <b>{profile.totalItems ? Math.round((state.attempts.reduce((s, a) => s + a.correct, 0) / profile.totalItems) * 100) : 0}%</b>
+            <span>overall accuracy</span>
+          </div>
         </div>
-        <div className="card stat">
-          <b>{st.current}</b>
-          <span>day streak · best {st.best}</span>
+        <div className="card stat" style={tint(28)}>
+          <span className="icon">🔥</span>
+          <div>
+            <b>{st.current}</b>
+            <span>day streak · best {st.best}</span>
+          </div>
         </div>
       </div>
 
       {!subjects.length ? (
-        <Empty title="No practice yet" body="Your strength profile builds from practice rounds. Each one is eight questions." action={{ to: '/practice', label: 'Start practising' }} />
+        <Empty emoji="🧩" title="No practice yet" body="Your strength profile builds from practice rounds. Each one is eight questions." action={{ to: '/practice', label: 'Start practising' }} />
       ) : (
         <div className="grid cols-2 section">
           <div className="card">
@@ -47,8 +58,9 @@ export function Progress() {
                 <div key={s.subjectId}>
                   <Meter
                     label={
-                      <span>
-                        <Link to={`/practice/${s.subjectId}`}>{subjectName(s.subjectId)}</Link>{' '}
+                      <span className="row" style={{ gap: 8 }}>
+                        <span aria-hidden="true">{subjectEmoji(s.subjectId, s.area)}</span>
+                        <Link to={`/practice/${s.subjectId}`}>{subjectName(s.subjectId)}</Link>
                         {s.trend === 'up' && <span className="badge good">↑</span>}
                         {s.trend === 'down' && <span className="badge warn">↓</span>}
                       </span>
@@ -72,7 +84,18 @@ export function Progress() {
               {[...AREAS]
                 .sort((a, b) => profile.areas[b] - profile.areas[a])
                 .map((a) => (
-                  <Meter key={a} label={AREA_NAMES[a]} value={profile.areas[a]} right={`${profile.areas[a]}% · ${Math.round(profile.areaEvidence[a] * 100)}% from practice`} />
+                  <Meter
+                    key={a}
+                    label={
+                      <>
+                        {AREA_META[a].emoji} {AREA_NAMES[a]}
+                      </>
+                    }
+                    value={profile.areas[a]}
+                    tone="tinted"
+                    hue={AREA_META[a].hue}
+                    right={`${profile.areas[a]}% · ${Math.round(profile.areaEvidence[a] * 100)}% from practice`}
+                  />
                 ))}
             </div>
           </div>
@@ -81,7 +104,7 @@ export function Progress() {
 
       <section className="section">
         <div className="section-head">
-          <h2>Coach's notes</h2>
+          <h2>Your coach says</h2>
         </div>
         <div className="stack">
           {feedback.map((f, i) => (

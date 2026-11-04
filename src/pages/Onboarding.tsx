@@ -39,12 +39,17 @@ export function Onboarding() {
   return (
     <div className="app">
       <main style={{ maxWidth: 640 }}>
-        <div className="row" style={{ marginBottom: 20 }}>
-          <img src={`${base}favicon.svg`} alt="" width={36} height={36} />
-          <div>
-            <h1 style={{ marginBottom: 0 }}>Rahnuma</h1>
-            <p className="muted small" style={{ margin: 0 }}>Your guide through school to the career you want.</p>
+        <div className="hero" style={{ marginBottom: 20, padding: '26px 22px' }}>
+          <div className="row" style={{ gap: 14 }}>
+            <img src={`${base}favicon.svg`} alt="" width={48} height={48} style={{ borderRadius: 14, boxShadow: '0 8px 20px rgb(0 0 0 / 0.25)' }} />
+            <div>
+              <h1 style={{ marginBottom: 2 }}>Rahnuma</h1>
+              <p style={{ margin: 0 }}>Your guide from here to the career you want.</p>
+            </div>
           </div>
+          <span className="hero-art" aria-hidden="true" style={{ fontSize: '4rem', top: 14, bottom: 'auto' }}>
+            🚀
+          </span>
         </div>
 
         <div className="progress-steps" aria-label={`Step ${step + 1} of ${steps.length}`}>
@@ -55,6 +60,7 @@ export function Onboarding() {
 
         {step === 0 && (
           <div className="card">
+            <span className="kicker">Step 1 of 3</span>
             <h2>What should we call you?</h2>
             <label className="field">
               <span>Your first name</span>
@@ -87,6 +93,7 @@ export function Onboarding() {
 
         {step === 1 && (
           <div className="card">
+            <span className="kicker">Step 2 of 3</span>
             <h2>Which grade are you in?</h2>
             <div className="choices cols-2" style={{ marginBottom: 16 }}>
               {BOARD_GRADES[boardId].map((g) => (
@@ -136,6 +143,7 @@ export function Onboarding() {
 
         {step === 2 && (
           <div className="card">
+            <span className="kicker">Step 3 of 3</span>
             <h2>Do you have a career in mind?</h2>
             <p className="small muted">Optional. If you are not sure, skip this and take the discovery quiz; it suggests careers that fit you.</p>
             <label className="field">
@@ -158,14 +166,14 @@ export function Onboarding() {
                 Back
               </button>
               <button className="btn primary" style={{ flex: 1 }} onClick={finish}>
-                {goal ? 'Show my roadmap' : 'Start exploring'}
+                {goal ? 'Show my roadmap 🚀' : 'Start exploring ✨'}
               </button>
             </div>
           </div>
         )}
 
         <p className="small muted" style={{ marginTop: 20, textAlign: 'center' }}>
-          Everything is saved on this device only. No account, no uploads.
+          🔒 Everything is saved on this device only. No account, no uploads.
         </p>
       </main>
     </div>

@@ -20,6 +20,7 @@ function Icon({ d }: { d: string }) {
 export function Layout() {
   const { state } = useStore()
   const base = import.meta.env.BASE_URL
+  const first = state.profile?.name.split(' ')[0] ?? ''
   return (
     <div className="app">
       <header className="topbar">
@@ -35,8 +36,11 @@ export function Layout() {
           ))}
         </nav>
         <span className="spacer" />
-        <Link to="/settings" className="btn sm" aria-label="Settings">
-          {state.profile?.name.split(' ')[0] ?? 'Settings'} · Grade {state.profile?.grade}
+        <Link to="/settings" className="avatar-chip" aria-label="Settings">
+          <span className="avatar" aria-hidden="true">
+            {first.slice(0, 1).toUpperCase()}
+          </span>
+          {first} · Grade {state.profile?.grade}
         </Link>
       </header>
       <main>

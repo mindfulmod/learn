@@ -6,8 +6,10 @@ import { AREAS, scoreDiscovery, topTraits, TRAITS } from '../engine/discovery'
 import { buildProfile } from '../engine/profile'
 import { useStore } from '../store/store'
 import { Meter } from '../components/ui'
+import { AREA_META, TRAIT_META } from '../design'
 
 const PAGE = 6
+const FACES = ['😐', '🙂', '😊', '😄', '🤩']
 
 export function Discover() {
   const { state, setDiscovery } = useStore()
@@ -33,15 +35,23 @@ export function Discover() {
     const top = topTraits(d.traits, 2)
     return (
       <>
+        <span className="kicker">Discovery</span>
         <h1>Your discovery profile</h1>
-        <p className="muted">
+        <p className="lead">
           Completed {new Date(d.completedAt).toLocaleDateString()}. This is a starting picture of your interests; practice results refine it over time.
         </p>
-        <div className="card accent section">
-          <h2>
-            You are a {TRAIT_NAMES[top[0]]} and {TRAIT_NAMES[top[1]]}
-          </h2>
-          <p className="small" style={{ margin: 0 }}>
+        <div className="hero section">
+          <span className="eyebrow">Your profile</span>
+          <div className="row" style={{ gap: 14, marginBottom: 8 }}>
+            <span style={{ fontSize: '2.4rem' }} aria-hidden="true">
+              {TRAIT_META[top[0]].emoji}
+              {TRAIT_META[top[1]].emoji}
+            </span>
+            <h2 style={{ color: '#fff', margin: 0 }}>
+              {TRAIT_NAMES[top[0]]} and {TRAIT_NAMES[top[1]]}
+            </h2>
+          </div>
+          <p style={{ margin: 0, maxWidth: '60ch' }}>
             {TRAIT_BLURBS[top[0]]} {TRAIT_BLURBS[top[1]]}
           </p>
         </div>
@@ -52,7 +62,17 @@ export function Discover() {
               {[...TRAITS]
                 .sort((a, b) => d.traits[b] - d.traits[a])
                 .map((t) => (
-                  <Meter key={t} label={TRAIT_NAMES[t]} value={d.traits[t]} tone="accent" />
+                  <Meter
+                    key={t}
+                    label={
+                      <>
+                        {TRAIT_META[t].emoji} {TRAIT_NAMES[t]}
+                      </>
+                    }
+                    value={d.traits[t]}
+                    tone="tinted"
+                    hue={TRAIT_META[t].hue}
+                  />
                 ))}
             </div>
           </div>
@@ -63,7 +83,17 @@ export function Discover() {
               {[...AREAS]
                 .sort((a, b) => profile.areas[b] - profile.areas[a])
                 .map((a) => (
-                  <Meter key={a} label={AREA_NAMES[a]} value={profile.areas[a]} />
+                  <Meter
+                    key={a}
+                    label={
+                      <>
+                        {AREA_META[a].emoji} {AREA_NAMES[a]}
+                      </>
+                    }
+                    value={profile.areas[a]}
+                    tone="tinted"
+                    hue={AREA_META[a].hue}
+                  />
                 ))}
             </div>
           </div>
@@ -97,8 +127,9 @@ export function Discover() {
 
   return (
     <>
-      <h1>Discover what suits you</h1>
-      <p className="muted">
+      <span className="kicker">Discovery</span>
+      <h1>What suits you?</h1>
+      <p className="lead">
         For each statement, choose how much it sounds like you. There are no right answers. {DISCOVERY_QUESTIONS.length} statements, about 5 minutes.
       </p>
       <div className="progress-steps" aria-label={`Page ${page + 1} of ${pages}`}>
@@ -122,6 +153,9 @@ export function Discover() {
                   className={`choice ${answers[q.id] === l.value ? 'selected' : ''}`}
                   onClick={() => setAnswers({ ...answers, [q.id]: l.value })}
                 >
+                  <span className="face" aria-hidden="true">
+                    {FACES[l.value - 1]}
+                  </span>
                   {l.label}
                 </button>
               ))}

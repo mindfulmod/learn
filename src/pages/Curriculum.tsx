@@ -9,7 +9,8 @@ import { unitsForGrade } from '../data/subjects'
 import { bandForGrade } from '../data/boards'
 import { buildProfile } from '../engine/profile'
 import { useStore } from '../store/store'
-import { LevelBadge } from '../components/ui'
+import { LevelBadge, SubjectTile } from '../components/ui'
+import { CLUSTER_META, tint } from '../design'
 
 export function Curriculum() {
   const { state } = useStore()
@@ -33,22 +34,24 @@ export function Curriculum() {
 
   return (
     <>
+      <span className="kicker">{board.shortName} track</span>
       <h1>Curriculum</h1>
-      <p className="muted">{board.name}. Pick a grade to see its subjects and what each one covers.</p>
+      <p className="lead">Pick a grade to see its subjects and what each one covers.</p>
 
-      <div className="tabs" role="tablist" aria-label="Grade">
+      <div className="tabs pills" role="tablist" aria-label="Grade">
         {BOARD_GRADES[p.boardId].map((g) => (
           <button key={g} role="tab" aria-selected={g === grade} className={`btn sm ${g === grade ? 'active' : ''}`} onClick={() => setGrade(g)}>
-            {g}
+            Grade {g}
           </button>
         ))}
       </div>
 
-      <div className="card soft section">
-        <h2 style={{ marginBottom: 4 }}>
-          {gradeLabel(p.boardId, grade)} <span className="badge primary">{board.stageLabels[stage]}</span>
-        </h2>
-        <p className="small muted" style={{ margin: 0 }}>
+      <div className="card accent section">
+        <span className="badge primary" style={{ marginBottom: 8 }}>
+          {board.stageLabels[stage]}
+        </span>
+        <h2 style={{ marginBottom: 4 }}>{gradeLabel(p.boardId, grade)}</h2>
+        <p className="small" style={{ margin: 0, color: 'var(--text-2)' }}>
           {stageInfo.summary}
         </p>
       </div>
@@ -63,8 +66,8 @@ export function Curriculum() {
                 <span className="small muted">{s.description}</span>
                 <span className="chips" style={{ marginTop: 6 }}>
                   {s.leadsTo.map((c) => (
-                    <span key={c} className="chip">
-                      {CLUSTER_NAMES[c]}
+                    <span key={c} className="chip tinted" style={tint(CLUSTER_META[c].hue)}>
+                      {CLUSTER_META[c].emoji} {CLUSTER_NAMES[c]}
                     </span>
                   ))}
                 </span>
@@ -97,28 +100,27 @@ export function Curriculum() {
             return (
               <details key={s.id}>
                 <summary>
-                  <span className="row between" style={{ display: 'inline-flex', width: 'calc(100% - 20px)' }}>
-                    <span>
-                      {s.name}
-                      {s.urduName && <span className="muted urdu" style={{ marginLeft: 8, display: 'inline-block' }}>{s.urduName}</span>}{' '}
-                      {goalMust.has(s.id) && <span className="chip must">must-have</span>}
-                      {!goalMust.has(s.id) && goalHelpful.has(s.id) && <span className="chip">helpful</span>}
-                      {needsStream && !compulsory && <span className="badge">elective</span>}
-                    </span>
+                  <SubjectTile subjectId={s.id} />
+                  <span className="summary-body">
+                    <span>{s.name}</span>
+                    {s.urduName && <span className="muted urdu small" style={{ display: 'inline-block', lineHeight: 1.4 }}>{s.urduName}</span>}
+                    {goalMust.has(s.id) && <span className="chip must">must-have</span>}
+                    {!goalMust.has(s.id) && goalHelpful.has(s.id) && <span className="chip">helpful</span>}
+                    {needsStream && !compulsory && <span className="badge">elective</span>}
                     {strength ? <LevelBadge level={strength.level} accuracy={strength.accuracy} /> : null}
                   </span>
                 </summary>
-                <p className="small muted" style={{ marginTop: 8 }}>
+                <p className="small" style={{ marginTop: 12, color: 'var(--text-2)' }}>
                   {s.description}
                 </p>
                 {units.map((u) => (
                   <div key={u.name}>
-                    <h4 className="small" style={{ marginBottom: 4 }}>
-                      {u.name}
-                    </h4>
-                    <ul className="small">
+                    <h4 style={{ marginBottom: 4 }}>{u.name}</h4>
+                    <ul className="small chips" style={{ listStyle: 'none', padding: 0 }}>
                       {u.topics.map((t) => (
-                        <li key={t}>{t}</li>
+                        <li key={t} className="chip">
+                          {t}
+                        </li>
                       ))}
                     </ul>
                   </div>

@@ -8,7 +8,7 @@ import { buildProfile, subjectStrength } from '../engine/profile'
 import { buildQuiz, QUIZ_LENGTH, summariseAttempt } from '../engine/quiz'
 import { useStore } from '../store/store'
 import type { GradeBand, QuizItem } from '../types'
-import { LevelBadge } from '../components/ui'
+import { LevelBadge, SubjectTile } from '../components/ui'
 
 const BANDS: GradeBand[] = ['1-5', '6-8', '9-10', '11-12']
 
@@ -29,11 +29,12 @@ export function Practice() {
 
   return (
     <>
+      <span className="kicker">Train</span>
       <h1>Practice</h1>
-      <p className="muted">
+      <p className="lead">
         {QUIZ_LENGTH} questions per round. Difficulty adapts to how you did last time, and weak topics come back until you beat them.
       </p>
-      <div className="tabs" role="tablist" aria-label="Grade band">
+      <div className="tabs pills" role="tablist" aria-label="Grade band">
         {BANDS.map((b) => (
           <button key={b} role="tab" aria-selected={band === b} className={`btn sm ${band === b ? 'active' : ''}`} onClick={() => setBand(b)}>
             Grades {b}
@@ -46,24 +47,27 @@ export function Practice() {
           const s = profile.subjects[id]
           const subj = getSubject(id)
           return (
-            <Link key={id} to={`/practice/${id}`} state={{ band }} className="card" style={{ color: 'inherit', textDecoration: 'none' }}>
-              <div className="row between" style={{ marginBottom: 6 }}>
-                <h3 style={{ margin: 0 }}>{subjectName(id)}</h3>
-                {must.has(id) && <span className="chip must">goal subject</span>}
-              </div>
-              <p className="small muted" style={{ marginBottom: 8 }}>
-                {subj?.description}
-              </p>
-              {s ? (
-                <span className="row" style={{ gap: 8 }}>
-                  <LevelBadge level={s.level} accuracy={s.accuracy} />
-                  <span className="small muted">
-                    {s.attempts} round{s.attempts === 1 ? '' : 's'}
+            <Link key={id} to={`/practice/${id}`} state={{ band }} className="card lift subject-card">
+              <SubjectTile subjectId={id} large />
+              <div>
+                <div className="row between" style={{ marginBottom: 4 }}>
+                  <h3 style={{ margin: 0 }}>{subjectName(id)}</h3>
+                  {must.has(id) && <span className="chip must">🎯 goal subject</span>}
+                </div>
+                <p className="small" style={{ marginBottom: 10, color: 'var(--text-2)' }}>
+                  {subj?.description}
+                </p>
+                {s ? (
+                  <span className="row" style={{ gap: 8 }}>
+                    <LevelBadge level={s.level} accuracy={s.accuracy} />
+                    <span className="small muted">
+                      {s.attempts} round{s.attempts === 1 ? '' : 's'}
+                    </span>
                   </span>
-                </span>
-              ) : (
-                <span className="badge">Not started</span>
-              )}
+                ) : (
+                  <span className="badge">Not started</span>
+                )}
+              </div>
             </Link>
           )
         })}
@@ -128,12 +132,19 @@ function Quiz({ subjectId, band: initialBand }: { subjectId: string; band: Grade
     const topicsMissed = [...new Set(wrong.map((w) => w.topic))]
     return (
       <>
-        <h1>
-          {correct} / {items.length}
-        </h1>
-        <p className="muted">
-          {subjectName(subjectId)} · grades {band} ·{' '}
-          {pct >= 85 ? 'Excellent. Next round will be harder.' : pct >= 60 ? 'Good work. A few topics to revise below.' : 'Good effort. Read the explanations, then try again tomorrow.'}
+        <div className="row" style={{ gap: 18, marginBottom: 8 }}>
+          <SubjectTile subjectId={subjectId} large />
+          <div>
+            <span className="big-score pop">
+              {correct}/{items.length}
+            </span>
+          </div>
+        </div>
+        <p className="lead">
+          {pct >= 85 ? '🎉 Excellent. Next round will be harder.' : pct >= 60 ? '👏 Good work. A few topics to revise below.' : '💪 Good effort. Read the explanations, then try again tomorrow.'}
+        </p>
+        <p className="small muted">
+          {subjectName(subjectId)} · grades {band}
         </p>
         <div className="card section">
           <div className="row between">
@@ -144,7 +155,7 @@ function Quiz({ subjectId, band: initialBand }: { subjectId: string; band: Grade
           </div>
           {topicsMissed.length > 0 && (
             <>
-              <h4 className="small" style={{ marginTop: 12 }}>Revise these topics</h4>
+              <h4 style={{ marginTop: 12 }}>Revise these topics</h4>
               <div className="chips">
                 {topicsMissed.map((t) => (
                   <span key={t} className="chip">
@@ -161,9 +172,9 @@ function Quiz({ subjectId, band: initialBand }: { subjectId: string; band: Grade
             <div className="stack">
               {wrong.map((w) => (
                 <div key={w.id} className="card">
-                  <p className="small muted" style={{ marginBottom: 4 }}>
+                  <span className="kicker" style={{ display: 'block', marginBottom: 6 }}>
                     {w.topic}
-                  </p>
+                  </span>
                   <p>
                     <b>{w.question}</b>
                   </p>
@@ -182,7 +193,7 @@ function Quiz({ subjectId, band: initialBand }: { subjectId: string; band: Grade
         )}
         <div className="row">
           <button className="btn primary" onClick={() => nav(0)}>
-            Another round
+            🔁 Another round
           </button>
           <Link to="/practice" className="btn">
             Other subjects
@@ -221,11 +232,14 @@ function Quiz({ subjectId, band: initialBand }: { subjectId: string; band: Grade
           <span key={it.id} className={i < index || (i === index && revealed) ? 'done' : ''} />
         ))}
       </div>
-      <div className="card">
-        <p className="small muted" style={{ marginBottom: 4 }}>
-          {item.topic} · {['Easy', 'Medium', 'Hard'][item.difficulty - 1]}
-        </p>
-        <h2 className={/[؀-ۿ]/.test(item.question) ? 'urdu' : ''}>{item.question}</h2>
+      <div className="card" style={{ padding: 26 }}>
+        <div className="row" style={{ gap: 8, marginBottom: 10 }}>
+          <span className="badge primary">{item.topic}</span>
+          <span className={`badge ${['good', 'warn', 'bad'][item.difficulty - 1]}`}>{['Easy', 'Medium', 'Hard'][item.difficulty - 1]}</span>
+        </div>
+        <h2 className={/[؀-ۿ]/.test(item.question) ? 'urdu' : ''} style={{ fontSize: '1.3rem' }}>
+          {item.question}
+        </h2>
         <div className="choices" style={{ marginTop: 12 }}>
           {item.options.map((opt, i) => {
             let cls = 'choice'
@@ -241,8 +255,8 @@ function Quiz({ subjectId, band: initialBand }: { subjectId: string; band: Grade
           })}
         </div>
         {revealed && (
-          <div className="explain">
-            <b>{chosen === item.answer ? 'Correct!' : 'Not quite.'}</b> {item.explanation}
+          <div className={`explain pop ${chosen === item.answer ? 'ok' : 'no'}`}>
+            <b>{chosen === item.answer ? '✅ Correct!' : '💡 Not quite.'}</b> {item.explanation}
           </div>
         )}
         <div className="row" style={{ marginTop: 16 }}>

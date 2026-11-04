@@ -42,6 +42,7 @@ export function Settings() {
 
   return (
     <>
+      <span className="kicker">You</span>
       <h1>Settings</h1>
       <div className="card section">
         <h3>Profile</h3>

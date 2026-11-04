@@ -8,7 +8,8 @@ import { careerFit, hasSignal } from '../engine/careers'
 import { goalPlan } from '../engine/plan'
 import { buildProfile } from '../engine/profile'
 import { useStore } from '../store/store'
-import { LevelBadge, ScoreRing } from '../components/ui'
+import { LevelBadge, ScoreRing, Tile } from '../components/ui'
+import { CLUSTER_META, tint } from '../design'
 
 export function CareerDetail() {
   const { id } = useParams()
@@ -36,29 +37,42 @@ export function CareerDetail() {
       <Link to="/careers" className="small">
         ← All careers
       </Link>
-      <div className="row between" style={{ marginTop: 8, marginBottom: 4 }}>
-        <div>
-          <span className="badge">{CLUSTER_NAMES[career.cluster]}</span>
-          <h1 style={{ marginTop: 6 }}>{career.title}</h1>
+      <div className="row between" style={{ marginTop: 10, marginBottom: 6, alignItems: 'flex-start' }}>
+        <div className="row" style={{ gap: 16, alignItems: 'flex-start' }}>
+          <Tile hue={CLUSTER_META[career.cluster].hue} large>
+            {CLUSTER_META[career.cluster].emoji}
+          </Tile>
+          <div>
+            <span className="badge tinted" style={tint(CLUSTER_META[career.cluster].hue)}>
+              {CLUSTER_NAMES[career.cluster]}
+            </span>
+            <h1 style={{ marginTop: 6 }}>{career.title}</h1>
+          </div>
         </div>
         {fit && <ScoreRing value={fit.score} />}
       </div>
-      <p className="muted">{career.summary}</p>
+      <p className="lead">{career.summary}</p>
       <div className="row section">
         <button className={`btn ${isGoal ? '' : 'primary'}`} onClick={toggleGoal}>
-          {isGoal ? 'Remove from my goals' : state.goals.length ? 'Make this my main goal' : 'Set as my goal'}
+          {isGoal ? '★ Remove from my goals' : state.goals.length ? '🎯 Make this my main goal' : '🎯 Set as my goal'}
         </button>
       </div>
 
       {fit && (fit.reasons.length > 0 || fit.cautions.length > 0) && (
         <div className="card section">
           <h3>Why {fit.score}% fit</h3>
-          <ul className="small">
+          <ul className="list small">
             {fit.reasons.map((r) => (
-              <li key={r}>✅ {r}</li>
+              <li key={r}>
+                <span className="badge good" style={{ marginRight: 8 }}>+</span>
+                {r}
+              </li>
             ))}
             {fit.cautions.map((r) => (
-              <li key={r}>⚠️ {r}</li>
+              <li key={r}>
+                <span className="badge warn" style={{ marginRight: 8 }}>!</span>
+                {r}
+              </li>
             ))}
           </ul>
           {!state.discovery && <p className="small muted">Take the discovery quiz for a fuller picture.</p>}
@@ -69,19 +83,19 @@ export function CareerDetail() {
         <div className="card">
           <h3>A day in the life</h3>
           <p className="small">{career.dayInLife}</p>
-          <h4 className="small">Degrees</h4>
+          <h4>Degrees</h4>
           <ul className="small">
             {career.degrees.map((d) => (
               <li key={d}>{d}</li>
             ))}
           </ul>
-          <h4 className="small">Entrance tests</h4>
+          <h4>Entrance tests</h4>
           <ul className="small">
             {career.entranceTests.map((d) => (
               <li key={d}>{d}</li>
             ))}
           </ul>
-          <h4 className="small">Where people study this</h4>
+          <h4>Where people study this</h4>
           <p className="small muted">{career.institutions.join(' · ')}</p>
         </div>
 
@@ -99,7 +113,7 @@ export function CareerDetail() {
           {plan.streamMatches === true && <span className="badge good">Your current group fits</span>}
           {plan.streamMatches === false && <span className="badge bad">Your current group does not include every must-have subject</span>}
 
-          <h4 className="small" style={{ marginTop: 14 }}>Subjects that matter</h4>
+          <h4 style={{ marginTop: 14 }}>Subjects that matter</h4>
           <ul className="list">
             {plan.subjects.map((s) => (
               <li key={s.subjectId} className="row between">
