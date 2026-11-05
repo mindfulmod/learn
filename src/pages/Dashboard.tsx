@@ -1,18 +1,18 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Check, Clock, Compass, Eye, Flame, Map as MapIcon, Sparkles, Target, Trophy, X, Zap } from 'lucide-react'
+import { ArrowRight, Check, Clock, Compass, Eye, Flame, Map as MapIcon, Sparkles, Target, Trophy, Volume2, Zap } from 'lucide-react'
 import { getCareer } from '../data/careers'
-import { TRAIT_NAMES } from '../data/discovery'
+import { pathsForInterests } from '../data/paths'
 import { getSubject, subjectName } from '../data/subjects'
-import { AREA_META, CLUSTER_META, TRAIT_META, subjectIcon, tint } from '../design'
+import { AREA_META, CLUSTER_META, FEEDBACK_ICON, subjectIcon, tint } from '../design'
 import { careerFit, hasSignal, rankCareers } from '../engine/careers'
-import { topTraits } from '../engine/discovery'
-import { buildFeedback } from '../engine/feedback'
+import { buildFeedback, type FeedbackItem } from '../engine/feedback'
 import { scoreFinder } from '../engine/finder'
 import { buildJourney } from '../engine/journey'
+import { modeFor, speak } from '../engine/mode'
 import { goalPlan } from '../engine/plan'
 import { buildProfile, streak } from '../engine/profile'
-import { levelFor, nextStep, totalXp, weeklyMissions, type NextStep } from '../engine/xp'
+import { levelFor, nextStep, totalXp, weeklyMissions, type Mission, type NextStep } from '../engine/xp'
 import { useStore } from '../store/store'
 import type { Career } from '../types'
 import { PageHeader } from '../components/PageHeader'
@@ -20,6 +20,7 @@ import { Ring } from '../components/Ring'
 import { Orb } from '../components/Orb'
 import { PathStrip } from '../components/PathStrip'
 import { FuturePreview } from '../components/FuturePreview'
+import { Interests } from '../components/Interests'
 import { FeedbackCard, IconTile, LevelBadge, Meter, ScoreRing } from '../components/ui'
 import '../styles/home.css'
 
@@ -29,15 +30,236 @@ const KIND_HUE: Record<Exclude<NextStep['kind'], 'practice'>, number> = { finder
 const KIND_VARIANT: Record<NextStep['kind'], number> = { practice: 0, finder: 1, preview: 2, discovery: 1, goal: 0 }
 const POPULAR = ['doctor', 'software-engineer', 'lawyer']
 
+interface Now {
+  kicker: string
+  greeting: string
+  week: { key: string; letter: string; name: string }[]
+  today: string
+}
+
 function short(title: string): string {
   return title.split(' (')[0]
 }
 
+/** Keep the first `n` words; add an ellipsis when something was cut. */
+function clipWords(text: string, n: number): string {
+  const words = text.trim().split(/\s+/)
+  if (words.length <= n) return text.trim()
+  return words.slice(0, n).join(' ').replace(/[.,;:!?]+$/, '') + '…'
+}
+
+function stepHueFor(step: NextStep): number {
+  if (step.kind !== 'practice') return KIND_HUE[step.kind]
+  const s = step.subjectId ? getSubject(step.subjectId) : undefined
+  return s ? AREA_META[s.area].hue : 258
+}
+
 export function Dashboard() {
+  const { state } = useStore()
+  const [now] = useState<Now>(() => {
+    const d = new Date()
+    const h = d.getHours()
+    const ms = d.getTime()
+    const week = Array.from({ length: 7 }, (_, i) => {
+      const key = new Date(ms - (6 - i) * 86400000).toISOString().slice(0, 10)
+      const wd = new Date(key + 'T00:00:00Z').getUTCDay()
+      return { key, letter: DAYS[wd].slice(0, 1), name: DAYS[wd] }
+    })
+    return {
+      kicker: `${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}`,
+      greeting: h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening',
+      week,
+      today: week[6].key,
+    }
+  })
+  return modeFor(state.profile) === 'junior' ? <JuniorHome now={now} /> : <SeniorHome now={now} />
+}
+
+// ------------------------------------------------------------------ Junior
+
+function juniorHeroTitle(step: NextStep): string {
+  if (step.kind === 'preview') return 'Peek at your future'
+  return clipWords(step.title, 6)
+}
+
+function juniorHeroLine(step: NextStep): string {
+  switch (step.kind) {
+    case 'practice':
+      return '8 quick questions. About 6 minutes.'
+    case 'finder':
+      return 'Eight fun questions. Three futures to look at.'
+    case 'preview': {
+      const id = step.to.split('/')[2]?.split('?')[0]
+      const c = id ? getCareer(id) : undefined
+      return `See your life as a ${c ? short(c.title).toLowerCase() : 'grown-up'}, year by year.`
+    }
+    case 'discovery':
+      return '24 quick questions about you.'
+    case 'goal':
+      return 'Pick a dream to aim at.'
+  }
+}
+
+function juniorStepSpan(step: NextStep): string {
+  switch (step.kind) {
+    case 'practice':
+      return '8 quick questions.'
+    case 'finder':
+      return 'Eight fun questions.'
+    case 'preview':
+      return 'Your life, year by year.'
+    case 'discovery':
+      return '24 quick questions about you.'
+    case 'goal':
+      return 'Pick a dream to aim at.'
+  }
+}
+
+/** Short, number-free copy for each mission on the junior home. */
+function juniorMission(m: Mission): { title: string; span: string } {
+  switch (m.id) {
+    case 'goal-subject':
+      return { title: 'Practise a goal subject', span: 'One round this week.' }
+    case 'set-goal':
+      return { title: 'Pick a goal', span: 'Preview a career, then set it.' }
+    case 'two-rounds':
+      return { title: 'Two rounds this week', span: m.detail }
+    case 'new-subject':
+      return { title: 'Try a new subject', span: clipWords(m.detail, 8) }
+    case 'preview':
+      return { title: 'Peer into a future', span: 'Preview any career, start to finish.' }
+    case 'discovery':
+      return { title: 'Take the discovery quiz', span: '24 quick questions about you.' }
+    case 'beat':
+      return { title: 'Beat your best score', span: 'Any round counts.' }
+    default:
+      return { title: clipWords(m.title, 6), span: '' }
+  }
+}
+
+interface StepRow {
+  title: string
+  span: string
+  to: string
+}
+
+function JuniorHome({ now }: { now: Now }) {
   const { state } = useStore()
   const p = state.profile!
   const profile = useMemo(() => buildProfile(state), [state])
-  const feedback = useMemo(() => buildFeedback(state, profile).slice(0, 3), [state, profile])
+  const coach = useMemo(() => buildFeedback(state, profile)[0], [state, profile])
+  const step = useMemo(() => nextStep(state), [state])
+  const missions = useMemo(() => weeklyMissions(state), [state])
+  const paths = useMemo(() => pathsForInterests(state.interests), [state.interests])
+  const goal = state.goals[0] ? getCareer(state.goals[0]) : undefined
+
+  const rows = useMemo<StepRow[]>(() => {
+    const first: StepRow = { title: juniorHeroTitle(step), span: juniorStepSpan(step), to: step.to }
+    const third: StepRow =
+      goal && !state.previewed.includes(goal.id) && step.kind !== 'preview'
+        ? { title: 'See your future', span: `Your life as a ${short(goal.title).toLowerCase()}.`, to: `/careers/${goal.id}?preview=1` }
+        : { title: 'Peer into a future', span: 'Pick a path and take a look.', to: '/careers' }
+    const m = missions.find((x) => !x.done && x.to !== first.to && x.to !== third.to)
+    const second: StepRow = m ? { ...juniorMission(m), to: m.to } : first.to === '/practice' ? { title: 'See how far you came', span: 'Your wins so far.', to: '/progress' } : { title: 'Practise anything', span: 'Pick any subject you like.', to: '/practice' }
+    return [first, second, third]
+  }, [step, missions, goal, state.previewed])
+
+  const firstName = p.name.split(' ')[0]
+  const CoachIcon = coach ? FEEDBACK_ICON[coach.kind] : null
+
+  return (
+    <div className="home-junior">
+      <PageHeader kicker={now.kicker} title={`${now.greeting}, ${firstName}`} />
+
+      <section className="tile hero-tile section">
+        <Orb hue={stepHueFor(step)} size={200} variant={KIND_VARIANT[step.kind]} />
+        <div className="hero-copy">
+          <span className="tile-label" style={{ color: 'rgb(255 255 255 / 0.85)' }}>
+            Today
+          </span>
+          <h2>{juniorHeroTitle(step)}</h2>
+          <p>{juniorHeroLine(step)}</p>
+          <Link to={step.to} className="btn primary">
+            {step.cta} <ArrowRight size={18} aria-hidden="true" />
+          </Link>
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="section-head stacked">
+          <h2>What are you curious about?</h2>
+          <p className="muted">Pick a few. Change them any time.</p>
+        </div>
+        <Interests />
+      </section>
+
+      <section className="section">
+        <div className="section-head">
+          <h2>A few paths for you</h2>
+        </div>
+        <div className="grid cols-3">
+          {paths.map((path) => (
+            <div key={path.cluster} className="card pastel path-tile" style={tint(path.hue)}>
+              <IconTile hue={path.hue} icon={CLUSTER_META[path.cluster].icon} />
+              <h3>{path.title}</h3>
+              <p>{path.promise}</p>
+              <Link to={`/careers?path=${path.cluster}`} className="btn sm">
+                Explore <ArrowRight size={16} aria-hidden="true" />
+              </Link>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="card section">
+        <h3>Your next small steps</h3>
+        <ul className="steps">
+          {rows.map((r, i) => (
+            <li key={i}>
+              <Link to={r.to}>
+                <span className="num">{i + 1}</span>
+                <span className="step-body">
+                  <b>{r.title}</b>
+                  {r.span && <span>{r.span}</span>}
+                </span>
+                <span className="go" aria-hidden="true">
+                  <ArrowRight size={18} />
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      {coach && CoachIcon && (
+        <section className={`card soft coach-line feedback ${coach.kind}`} aria-label="Your coach says">
+          <span className="kind" aria-hidden="true">
+            <CoachIcon size={18} strokeWidth={2.2} />
+          </span>
+          <b className="coach-title">{coach.title}</b>
+          <span className="coach-actions">
+            <button type="button" className="btn sm" onClick={() => speak(coach.title)} aria-label="Read aloud">
+              <Volume2 size={16} aria-hidden="true" />
+            </button>
+            {coach.action && (
+              <Link to={coach.action.to} className="btn sm primary">
+                {coach.action.label}
+              </Link>
+            )}
+          </span>
+        </section>
+      )}
+    </div>
+  )
+}
+
+// ------------------------------------------------------------------ Senior
+
+function SeniorHome({ now }: { now: Now }) {
+  const { state } = useStore()
+  const p = state.profile!
+  const profile = useMemo(() => buildProfile(state), [state])
+  const feedback = useMemo<FeedbackItem[]>(() => buildFeedback(state, profile).slice(0, 3).map((f) => ({ ...f, body: clipWords(f.body, 18) })), [state, profile])
   const goal = state.goals[0] ? getCareer(state.goals[0]) : undefined
   const journey = useMemo(() => (goal ? buildJourney(goal, p) : null), [goal, p])
   const plan = useMemo(() => (goal ? goalPlan(goal, p, profile) : null), [goal, p, profile])
@@ -58,43 +280,8 @@ export function Dashboard() {
     .sort((a, b) => b.accuracy - a.accuracy)
     .slice(0, 3)
 
-  const [now] = useState(() => {
-    const d = new Date()
-    const h = d.getHours()
-    const ms = d.getTime()
-    const week = Array.from({ length: 7 }, (_, i) => {
-      const key = new Date(ms - (6 - i) * 86400000).toISOString().slice(0, 10)
-      const wd = new Date(key + 'T00:00:00Z').getUTCDay()
-      return { key, letter: DAYS[wd].slice(0, 1), name: DAYS[wd] }
-    })
-    return {
-      kicker: `${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}`,
-      greeting: h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening',
-      week,
-      today: week[6].key,
-    }
-  })
-
-  const [showGuide, setShowGuide] = useState(() => {
-    try {
-      return localStorage.getItem('rahnuma.guide') !== 'done'
-    } catch {
-      return true
-    }
-  })
-  const dismissGuide = () => {
-    setShowGuide(false)
-    try {
-      localStorage.setItem('rahnuma.guide', 'done')
-    } catch {
-      // Storage may be unavailable; the strip just reappears next visit.
-    }
-  }
-
   const [preview, setPreview] = useState<string | null>(null)
 
-  const stepSubject = step.kind === 'practice' && step.subjectId ? getSubject(step.subjectId) : undefined
-  const stepHue = step.kind === 'practice' ? (stepSubject ? AREA_META[stepSubject.area].hue : 258) : KIND_HUE[step.kind]
   const active = new Set(state.activeDays)
   const doneCount = missions.filter((m) => m.done).length
   const firstName = p.name.split(' ')[0]
@@ -103,38 +290,16 @@ export function Dashboard() {
     <>
       <PageHeader kicker={now.kicker} title={`${now.greeting}, ${firstName}`} lead={goal ? `Aiming for ${short(goal.title)}` : "No goal yet. Let's find one."} />
 
-      {showGuide && (
-        <section className="card accent guide-strip" aria-label="How Rahnuma works">
-          <h3>How Rahnuma works</h3>
-          <div className="guide-steps">
-            <Link to="/finder">
-              <Compass size={18} aria-hidden="true" /> Find a direction
-            </Link>
-            <ArrowRight size={16} className="sep" aria-hidden="true" />
-            <Link to="/careers">
-              <Eye size={18} aria-hidden="true" /> Peer into the future
-            </Link>
-            <ArrowRight size={16} className="sep" aria-hidden="true" />
-            <Link to="/practice">
-              <Target size={18} aria-hidden="true" /> Train for it
-            </Link>
-          </div>
-          <button className="btn sm" onClick={dismissGuide} aria-label="Dismiss guide">
-            <X size={14} aria-hidden="true" /> Got it
-          </button>
-        </section>
-      )}
-
       <div className="bento section">
         {/* 1. Next step */}
         <section className="tile hero-tile span-2 row-2">
-          <Orb hue={stepHue} size={220} variant={KIND_VARIANT[step.kind]} />
+          <Orb hue={stepHueFor(step)} size={220} variant={KIND_VARIANT[step.kind]} />
           <div className="hero-copy">
             <span className="tile-label" style={{ color: 'rgb(255 255 255 / 0.85)' }}>
               Next step
             </span>
             <h2>{step.title}</h2>
-            <p>{step.detail}</p>
+            <p>{clipWords(step.detail, 12)}</p>
             <div className="hero-meta">
               <span className="badge">
                 <Clock size={14} className="inline-icon" aria-hidden="true" />
@@ -166,7 +331,6 @@ export function Dashboard() {
               </span>
             ))}
           </div>
-          <span className="small muted tile-foot">{st.current >= 3 ? 'Keep the chain going' : st.current === 0 ? 'A round today restarts it' : 'Nice start'}</span>
         </section>
 
         {/* 3. Level */}
@@ -180,7 +344,7 @@ export function Dashboard() {
             </Ring>
             <div>
               <h3>{level.name}</h3>
-              <span className="small muted">{level.next ? `${xp} XP · ${level.next - xp} to ${levelFor(level.next).name}` : `${xp} XP · Top level`}</span>
+              <span className="small muted">{xp} XP</span>
             </div>
           </div>
         </Link>
@@ -230,9 +394,9 @@ export function Dashboard() {
                 {plan.subjects
                   .filter((s) => s.importance === 'must')
                   .map((s) => (
-                    <Link key={s.subjectId} to={`/practice/${s.subjectId}`}>
+                    <Link key={s.subjectId} to={`/practice/${s.subjectId}`} className={s.level === 'not-practised' ? 'plain' : ''}>
                       {s.name}
-                      <LevelBadge level={s.level} accuracy={s.accuracy} />
+                      {s.level !== 'not-practised' && <LevelBadge level={s.level} />}
                     </Link>
                   ))}
               </div>
@@ -277,7 +441,6 @@ export function Dashboard() {
                   </span>
                   <span className="mission-text">
                     <b>{m.title}</b>
-                    <span>{m.detail}</span>
                   </span>
                 </Link>
                 <span className="badge primary">+{m.xp}</span>
@@ -294,19 +457,6 @@ export function Dashboard() {
           <span className="tile-label">
             <Zap size={14} aria-hidden="true" /> Strengths
           </span>
-          {state.discovery && (
-            <div className="chips">
-              {topTraits(state.discovery.traits, 2).map((t) => {
-                const TraitIcon = TRAIT_META[t].icon
-                return (
-                  <span key={t} className="chip tinted" style={tint(TRAIT_META[t].hue)}>
-                    <TraitIcon size={14} className="inline-icon" aria-hidden="true" />
-                    {TRAIT_NAMES[t]}
-                  </span>
-                )
-              })}
-            </div>
-          )}
           {strengths.length ? (
             <div className="strength-meters">
               {strengths.map((s) => {
@@ -339,6 +489,11 @@ export function Dashboard() {
           )}
         </section>
       </div>
+
+      <section className="card section">
+        <h3>What are you curious about?</h3>
+        <Interests />
+      </section>
 
       {feedback.length > 0 && (
         <section className="section">
