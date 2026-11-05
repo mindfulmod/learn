@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ArrowRight, BookOpen, Check, Compass, Dumbbell, Eye, Flag, Lightbulb, PartyPopper, RefreshCw, Sparkles, Target, ThumbsUp, Volume2, X, Zap, type LucideIcon } from 'lucide-react'
 import { bandForGrade, BOARD_GRADES } from '../data/boards'
@@ -12,7 +12,7 @@ import { buildQuiz, QUIZ_LENGTH, summariseAttempt } from '../engine/quiz'
 import { attemptXp, levelFor, nextStep, totalXp, XP, type NextStep } from '../engine/xp'
 import { useStore } from '../store/store'
 import type { GradeBand, QuizAttempt, QuizItem } from '../types'
-import { IconTile, LevelBadge, SubjectTile } from '../components/ui'
+import { IconTile, LevelBadge } from '../components/ui'
 import { Screen } from '../components/Screen'
 import { ContextRail } from '../components/ContextRail'
 import { PageHeader } from '../components/PageHeader'
@@ -225,136 +225,129 @@ function Quiz({ subjectId, band: initialBand }: { subjectId: string; band: Grade
       </div>
     )
 
-    const actions = (
-      <div className="row result-actions">
-        <button className="btn primary" onClick={() => nav(0)}>
-          <RefreshCw size={18} aria-hidden="true" /> Another round
-        </button>
-        <Link to="/practice" className="btn">
-          Other subjects
-        </Link>
-        <Link to="/" className="btn">
-          Home
-        </Link>
-      </div>
+    const look = stepLook(step)
+    const sameRound = step.kind === 'practice' && step.subjectId === subjectId
+    const verdict =
+      pct >= 85 ? (
+        <>
+          <PartyPopper size={20} aria-hidden="true" />
+          {junior ? 'Brilliant. You really know this.' : 'Excellent. Next round will be harder.'}
+        </>
+      ) : pct >= 60 ? (
+        <>
+          <ThumbsUp size={20} aria-hidden="true" />
+          {junior ? 'Good work. Nearly there.' : 'Good work. A few topics to revise below.'}
+        </>
+      ) : (
+        <>
+          <Dumbbell size={20} aria-hidden="true" />
+          {junior ? 'Good try. Practice makes it easier.' : 'Good effort. Read the explanations, then try again tomorrow.'}
+        </>
+      )
+
+    const handoff = (
+      <section className="card accent handoff section result-handoff" aria-label="Next up">
+        <IconTile hue={look.hue} icon={look.icon} />
+        <div className="handoff-body">
+          <span className="tile-label">Next up</span>
+          <h3>{step.title}</h3>
+          {!junior && <p className="small">{step.detail}</p>}
+          <div className="row handoff-actions">
+            {sameRound ? (
+              <button className="btn primary" onClick={() => nav(0)}>
+                {step.cta} <ArrowRight size={18} aria-hidden="true" />
+              </button>
+            ) : (
+              <>
+                <Link to={step.to} className="btn primary">
+                  {step.cta} <ArrowRight size={18} aria-hidden="true" />
+                </Link>
+                <button className="btn" onClick={() => nav(0)}>
+                  <RefreshCw size={18} aria-hidden="true" /> Another round
+                </button>
+              </>
+            )}
+            <Link to="/practice" className="btn quiet">
+              Back to Practice
+            </Link>
+          </div>
+        </div>
+      </section>
     )
+
+    const header = <PageHeader kicker={`Practice · ${subject}`} title={`${correct} of ${total}`} lead={<span className="result-verdict">{verdict}</span>} />
 
     if (junior) {
       return (
-        <div className="junior-result">
-          <Confetti />
-          <div className="result-head">
-            <SubjectTile subjectId={subjectId} large />
-            <span className="big-score pop">
-              {correct}/{total}
-            </span>
-          </div>
-          <p className="lead result-verdict">
-            {pct >= 85 ? (
-              <>
-                <PartyPopper size={22} aria-hidden="true" />
-                Brilliant. You really know this.
-              </>
-            ) : pct >= 60 ? (
-              <>
-                <ThumbsUp size={22} aria-hidden="true" />
-                Good work. Nearly there.
-              </>
-            ) : (
-              <>
-                <Dumbbell size={22} aria-hidden="true" />
-                Good try. Practice makes it easier.
-              </>
-            )}
-          </p>
-          {topicsMissed.length > 0 && (
-            <div className="card pastel section" style={tint(160)}>
-              <h4 style={{ marginTop: 0 }}>Topics to look at again</h4>
-              <div className="chips">
-                {topicsMissed.map((t) => (
-                  <span key={t} className="chip">
-                    {t}
-                  </span>
-                ))}
+        <Screen header={header}>
+          <div className="junior-result">
+            <Confetti />
+            {topicsMissed.length > 0 && (
+              <div className="card pastel section" style={tint(160)}>
+                <h4 style={{ marginTop: 0 }}>Topics to look at again</h4>
+                <div className="chips">
+                  {topicsMissed.map((t) => (
+                    <span key={t} className="chip">
+                      {t}
+                    </span>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
-          {actions}
-          {wrong.length > 0 && (
-            <details className="result-details">
-              <summary>Show my answers</summary>
-              {misses}
-            </details>
-          )}
-        </div>
+            )}
+            {wrong.length > 0 && (
+              <details className="result-details section">
+                <summary>Show my answers</summary>
+                {misses}
+              </details>
+            )}
+            {handoff}
+          </div>
+        </Screen>
       )
     }
 
     return (
-      <>
+      <Screen header={header}>
         <Celebrate xp={xp} label={`${correct}/${total} in ${subject}`} />
-        <div className="result-head">
-          <SubjectTile subjectId={subjectId} large />
-          <span className="big-score pop">
-            {correct}/{total}
-          </span>
-        </div>
-        <p className="lead result-verdict">
-          {pct >= 85 ? (
-            <>
-              <PartyPopper size={20} aria-hidden="true" />
-              Excellent. Next round will be harder.
-            </>
-          ) : pct >= 60 ? (
-            <>
-              <ThumbsUp size={20} aria-hidden="true" />
-              Good work. A few topics to revise below.
-            </>
-          ) : (
-            <>
-              <Dumbbell size={20} aria-hidden="true" />
-              Good effort. Read the explanations, then try again tomorrow.
-            </>
-          )}
-        </p>
-        <p className="small muted">
-          {subject} · grades {band}
-        </p>
-
-        <div className="card accent section earned-row">
-          <Ring value={level.progress} size={48} stroke={5}>
-            <Zap size={16} aria-hidden="true" />
-          </Ring>
-          <div>
-            <b>You earned +{xp} XP</b>
-            <span>{level.next ? `${level.next - allXp} XP to ${levelFor(level.next).name}` : `${level.name}: top level reached`}</span>
+        <div className="result-grid section">
+          <div className="card accent earned-row">
+            <Ring value={level.progress} size={48} stroke={5}>
+              <Zap size={16} aria-hidden="true" />
+            </Ring>
+            <div>
+              <b>You earned +{xp} XP</b>
+              <span>{level.next ? `${level.next - allXp} XP to ${levelFor(level.next).name}` : `${level.name}: top level reached`}</span>
+            </div>
           </div>
-        </div>
 
-        <div className="card section">
-          <div className="row between">
-            <span>
-              Overall in {subject}: <LevelBadge level={strength.level} accuracy={strength.accuracy} />
-            </span>
-            {strength.trend === 'up' && <span className="badge good">Improving</span>}
+          <div className="card">
+            <div className="row between">
+              <span>
+                Overall in {subject}: <LevelBadge level={strength.level} accuracy={strength.accuracy} />
+              </span>
+              {strength.trend === 'up' && <span className="badge good">Improving</span>}
+            </div>
+            <p className="small muted" style={{ margin: '6px 0 0' }}>
+              Grades {band}
+            </p>
+            {topicsMissed.length > 0 && (
+              <>
+                <h4 style={{ marginTop: 12 }}>Revise these topics</h4>
+                <div className="chips">
+                  {topicsMissed.map((t) => (
+                    <span key={t} className="chip">
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
-          {topicsMissed.length > 0 && (
-            <>
-              <h4 style={{ marginTop: 12 }}>Revise these topics</h4>
-              <div className="chips">
-                {topicsMissed.map((t) => (
-                  <span key={t} className="chip">
-                    {t}
-                  </span>
-                ))}
-              </div>
-            </>
-          )}
         </div>
 
         {misses}
-        {actions}
-      </>
+        {handoff}
+      </Screen>
     )
   }
 
@@ -363,11 +356,17 @@ function Quiz({ subjectId, band: initialBand }: { subjectId: string; band: Grade
       <X size={16} aria-hidden="true" /> Quit
     </Link>
   )
-  const quizTitle = (
-    <div className="quiz-title">
-      <b>{subject}</b>
-      <span>Grades {band}</span>
-    </div>
+  const quizHeader = (title: string, counter?: ReactNode) => (
+    <PageHeader
+      kicker={`Practice · ${subject}`}
+      title={<span aria-live="polite">{title}</span>}
+      action={
+        <>
+          {counter}
+          {quitButton}
+        </>
+      }
+    />
   )
 
   if (inLesson && lesson) {
@@ -379,11 +378,7 @@ function Quiz({ subjectId, band: initialBand }: { subjectId: string; band: Grade
     }
     return (
       <>
-        <div className="quiz-top">
-          {quitButton}
-          {quizTitle}
-          <span className="quiz-top-spacer" aria-hidden="true" />
-        </div>
+        <div className="quiz-top">{quizHeader('Read this first')}</div>
         <div className="card lesson-card pop" style={tint(160)}>
           <span className="kicker lesson-kicker">
             <BookOpen size={14} aria-hidden="true" /> {subject} · grades {band}
@@ -433,27 +428,19 @@ function Quiz({ subjectId, band: initialBand }: { subjectId: string; band: Grade
   return (
     <>
       <div className="quiz-top">
-        {quitButton}
-        {quizTitle}
-        {junior ? (
-          <span className="stat-chip quiz-of" aria-live="polite">
-            {index + 1} of {items.length}
-          </span>
-        ) : (
-          <span className="stat-chip xp quiz-xp" aria-live="polite" aria-label={`${liveXp} XP this round`}>
-            <Sparkles size={16} aria-hidden="true" />
-            <b key={liveXp} className={liveXp ? 'bump' : ''}>
-              {liveXp}
-            </b>
-            XP
-          </span>
+        {quizHeader(
+          `Question ${index + 1} of ${items.length}`,
+          junior ? undefined : (
+            <span className="stat-chip xp quiz-xp" aria-label={`${liveXp} XP this round`}>
+              <Sparkles size={16} aria-hidden="true" />
+              <b key={liveXp} className={liveXp ? 'bump' : ''}>
+                {liveXp}
+              </b>
+              XP
+            </span>
+          ),
         )}
       </div>
-      {!junior && (
-        <div className="quiz-count">
-          {index + 1} / {items.length}
-        </div>
-      )}
       <div className={`progress-steps ${junior ? 'dots' : ''}`} aria-hidden="true">
         {items.map((it, i) => (
           <span key={it.id} className={i < index || (i === index && revealed) ? 'done' : ''} />
