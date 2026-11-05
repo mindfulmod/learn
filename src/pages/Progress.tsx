@@ -1,17 +1,19 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { Check, Compass, Dumbbell, Eye, Flag, Flame, Lightbulb, Medal, Puzzle, Target, Zap, type LucideIcon } from 'lucide-react'
+import { Compass, Dumbbell, Eye, Flag, Flame, Lightbulb, Medal, Puzzle, Target, Zap, type LucideIcon } from 'lucide-react'
 import { AREA_NAMES } from '../data/discovery'
 import { subjectName } from '../data/subjects'
 import { AREAS } from '../engine/discovery'
 import { buildFeedback } from '../engine/feedback'
 import { modeFor } from '../engine/mode'
-import { buildProfile, streak, type MasteryLevel } from '../engine/profile'
-import { badges, LEVELS, levelFor, totalXp, weeklyMissions } from '../engine/xp'
+import { buildProfile, type MasteryLevel } from '../engine/profile'
+import { badges, LEVELS, levelFor, totalXp } from '../engine/xp'
 import { useStore } from '../store/store'
 import { Empty, FeedbackCard, IconTile, LevelBadge, Meter } from '../components/ui'
 import { PageHeader } from '../components/PageHeader'
 import { Ring } from '../components/Ring'
+import { Screen } from '../components/Screen'
+import { ContextRail } from '../components/ContextRail'
 import { AREA_META, subjectIcon, tint } from '../design'
 import '../styles/practice.css'
 
@@ -26,7 +28,6 @@ const BADGE_META: Record<string, { icon: LucideIcon; hue: number }> = {
   'ten-rounds': { icon: Dumbbell, hue: 300 },
 }
 
-const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 const JUNIOR_LEVEL: Record<MasteryLevel, string> = { strong: 'Strong', developing: 'Developing', 'needs-work': 'Keep going', 'not-practised': 'Keep going' }
 
 export function Progress() {
@@ -38,34 +39,10 @@ function JuniorProgress() {
   const { state } = useStore()
   const profile = useMemo(() => buildProfile(state), [state])
   const badgeList = useMemo(() => [...badges(state)].sort((a, b) => Number(b.earned) - Number(a.earned)), [state])
-  const [week] = useState(() => {
-    const ms = Date.now()
-    return Array.from({ length: 7 }, (_, i) => {
-      const key = new Date(ms - (6 - i) * 86400000).toISOString().slice(0, 10)
-      return { key, letter: DAY_LETTERS[new Date(key + 'T00:00:00Z').getUTCDay()] }
-    })
-  })
-  const active = new Set(state.activeDays)
-  const st = streak(state.activeDays)
   const subjects = Object.values(profile.subjects).sort((a, b) => b.accuracy - a.accuracy)
 
   return (
-    <>
-      <PageHeader themed hue={140} variant={2} kicker="Progress" title="You're growing" lead="Every day you practise counts." />
-
-      <section className="card pastel section" aria-label="Streak">
-        <div className="streak-days" aria-label="Last seven days">
-          {week.map((d, i) => (
-            <span key={d.key} className={`${active.has(d.key) ? 'on' : ''} ${i === 6 ? 'today' : ''}`}>
-              {d.letter}
-            </span>
-          ))}
-        </div>
-        <h2 style={{ margin: '14px 0 0' }}>
-          <Flame size={22} className="inline-icon" aria-hidden="true" /> {st.current} day{st.current === 1 ? '' : 's'} in a row
-        </h2>
-      </section>
-
+    <Screen header={<PageHeader themed hue={140} variant={2} kicker="Progress" title="You're growing" />} rail={<ContextRail />}>
       <section className="card section">
         <h3>Badges</h3>
         <div className="badge-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(96px, 1fr))' }}>
@@ -82,11 +59,9 @@ function JuniorProgress() {
       </section>
 
       {!subjects.length ? (
-        <div className="progress-section">
-          <Empty icon={Puzzle} title="No practice yet" body="Play one round to see your subjects." action={{ to: '/practice', label: 'Start practising' }} />
-        </div>
+        <Empty icon={Puzzle} title="No practice yet" body="Play one round to see your subjects." action={{ to: '/practice', label: 'Start practising' }} />
       ) : (
-        <section className="card section">
+        <section className="card">
           <h3>Subjects</h3>
           <div className="stack">
             {subjects.map((s) => {
@@ -108,7 +83,7 @@ function JuniorProgress() {
           </div>
         </section>
       )}
-    </>
+    </Screen>
   )
 }
 
@@ -117,28 +92,29 @@ function SeniorProgress() {
   const profile = useMemo(() => buildProfile(state), [state])
   const feedback = useMemo(() => buildFeedback(state, profile), [state, profile])
   const xp = useMemo(() => totalXp(state), [state])
-  const missions = useMemo(() => weeklyMissions(state), [state])
   const badgeList = useMemo(() => badges(state), [state])
   const level = levelFor(xp)
   const nextName = level.next !== null ? levelFor(level.next).name : null
-  const st = streak(state.activeDays)
   const subjects = Object.values(profile.subjects).sort((a, b) => b.accuracy - a.accuracy)
   const recent = [...state.attempts].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 12)
   const accuracy = profile.totalItems ? Math.round((state.attempts.reduce((s, a) => s + a.correct, 0) / profile.totalItems) * 100) : 0
 
   return (
-    <>
-      <PageHeader
-        themed
-        hue={140}
-        variant={2}
-        kicker="Progress"
-        title={`${level.name}, level ${level.index + 1}`}
-        lead={level.next !== null ? `${xp} XP · ${level.next - xp} to ${nextName}` : `${xp} XP · Top level reached`}
-      />
-
-      <div className="bento">
-        <div className="card pastel tile span-2 level-tile">
+    <Screen
+      header={
+        <PageHeader
+          themed
+          hue={140}
+          variant={2}
+          kicker="Progress"
+          title={`${level.name}, level ${level.index + 1}`}
+          lead={level.next !== null ? `${xp} XP · ${level.next - xp} to ${nextName}` : `${xp} XP · Top level reached`}
+        />
+      }
+      rail={<ContextRail level={false} coach={false} />}
+    >
+      <div className="bento progress-bento">
+        <div className="card pastel tile span-3 level-tile">
           <Ring value={level.progress} size={96} stroke={9}>
             <Zap size={32} aria-hidden="true" />
           </Ring>
@@ -155,17 +131,6 @@ function SeniorProgress() {
             </ol>
           </div>
         </div>
-        <div className="card tile stat-tile" style={tint(24)}>
-          <div className="tile-head">
-            <span className="tile-label">Streak</span>
-            <Flame size={20} aria-hidden="true" />
-          </div>
-          <span className="big">
-            {st.current}
-            <small>day{st.current === 1 ? '' : 's'}</small>
-          </span>
-          <p className="stat-sub">Best: {st.best} day{st.best === 1 ? '' : 's'}</p>
-        </div>
         <div className="card tile stat-tile" style={tint(160)}>
           <div className="tile-head">
             <span className="tile-label">Accuracy</span>
@@ -178,31 +143,7 @@ function SeniorProgress() {
         </div>
       </div>
 
-      <div className="grid cols-2 progress-section">
-        <div className="card">
-          <div className="card-head">
-            <h3>This week</h3>
-            <span className="small muted">
-              {missions.filter((m) => m.done).length} of {missions.length} done
-            </span>
-          </div>
-          <ul className="missions roomy">
-            {missions.map((m) => (
-              <li key={m.id} className={m.done ? 'done' : ''}>
-                <Link to={m.to}>
-                  <span className={`mission-check ${m.done ? 'done' : ''}`} aria-hidden="true">
-                    <Check size={14} strokeWidth={3} />
-                  </span>
-                  <span className="mission-text">
-                    <b>{m.title}</b>
-                    <span>{m.detail}</span>
-                  </span>
-                </Link>
-                <span className="badge primary">+{m.xp} XP</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+      <div className="progress-section">
         <div className="card">
           <div className="card-head">
             <h3>Badges</h3>
@@ -321,6 +262,6 @@ function SeniorProgress() {
           </div>
         </section>
       )}
-    </>
+    </Screen>
   )
 }

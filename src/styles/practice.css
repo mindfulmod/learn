@@ -28,9 +28,11 @@
 .practice-note { margin-top: 16px; }
 
 /* ---------- Quiz -------------------------------------------------------- */
-.quiz-top {
-  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; margin-bottom: 12px;
-}
+.quiz-top { margin-bottom: 4px; }
+.quiz-top .page-header { align-items: center; flex-wrap: nowrap; margin-bottom: 14px; }
+.quiz-top .page-header > div:first-child { min-width: 0; }
+.quiz-top .page-header h1 { font-size: clamp(1.3rem, 3vw, 1.7rem); margin: 2px 0 0; overflow-wrap: anywhere; }
+.quiz-top .page-header-action { display: flex; align-items: center; gap: 8px; }
 .quiz-top .btn.sm { min-height: 40px; }
 .quiz-title { text-align: center; min-width: 0; display: flex; flex-direction: column; line-height: 1.2; }
 .quiz-title b { font-family: var(--font-display); font-size: 0.98rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -92,7 +94,7 @@
 .stat-tile .stat-sub { font-size: 0.82rem; color: var(--text-2); margin: 0; }
 
 .progress-section { margin-top: 24px; }
-.progress-section > .card + .card { margin-top: 16px; }
+.progress-section:not(.grid) > .card + .card { margin-top: 16px; }
 .card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
 .card-head h3 { margin: 0; }
 .missions.roomy { gap: 12px; }
@@ -135,3 +137,25 @@
 .result-details { margin-top: 20px; }
 .result-details summary { cursor: pointer; font-weight: 700; color: var(--text-2); min-height: 44px; display: flex; align-items: center; }
 .result-details .section { margin-top: 8px; }
+
+/* ---------- Iteration 4: picker beside the rail, results in the frame ---- */
+@media (min-width: 640px) { .grid.cols-3.course-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); } }
+.page-header .result-verdict { display: inline-flex; align-items: center; gap: 8px; }
+.junior .page-header .result-verdict { font-size: 1.15rem; font-weight: 600; }
+.result-grid { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (min-width: 760px) { .result-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); } }
+.result-grid > .card.card { margin-top: 0; }
+.result-handoff { align-items: flex-start; margin-top: 8px; padding: 20px 22px; }
+.result-handoff .handoff-body p { margin: 0 0 4px; color: var(--text-2); }
+.handoff-actions { margin-top: 12px; gap: 8px; flex-wrap: wrap; }
+.result-handoff .btn.quiet { background: transparent; border-color: transparent; }
+.result-handoff .btn.quiet:hover { background: var(--surface); }
+@media (max-width: 480px) { .result-handoff { flex-direction: column; } .handoff-actions .btn { flex: 1 1 100%; justify-content: center; } }
+.junior-result .result-details { margin-top: 0; }
+/* Progress beside the rail */
+.progress-bento > .card { margin-top: 0; }
+@media (max-width: 759px) { .progress-bento .stat-tile { grid-column: span 2; } }
+.progress-section.grid > .card { margin-top: 0; }
+.progress-section.grid { align-items: start; }
+.progress-section + .section { margin-top: 32px; }
+@media (min-width: 640px) { .progress-bento .level-tile { flex-wrap: nowrap; } }

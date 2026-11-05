@@ -2,7 +2,7 @@ import { Coins } from 'lucide-react'
 import { formatPkr, type CareerLife } from '../data/careerLife'
 
 /** Approximate national median monthly pay, PKR. Labour Force Survey based aggregators put it near 70k. */
-export const NATIONAL_MEDIAN_PKR = 70_000
+const NATIONAL_MEDIAN_PKR = 70_000
 const SCALE_MAX = 1_600_000
 
 function pct(v: number): number {
@@ -13,7 +13,7 @@ function pct(v: number): number {
 }
 
 /** Three-coin verdict for juniors, from the experienced midpoint. */
-export function payLevel(life: CareerLife): { coins: 1 | 2 | 3; label: string } {
+function payLevel(life: CareerLife): { coins: 1 | 2 | 3; label: string } {
   const mid = (life.pay.experienced[0] + life.pay.experienced[1]) / 2
   if (mid < 200_000) return { coins: 1, label: 'Pays OK' }
   if (mid < 500_000) return { coins: 2, label: 'Pays well' }

@@ -171,6 +171,16 @@ function Quiz({ subjectId, band: initialBand }: { subjectId: string; band: Grade
     }
   }, [result, addAttempt])
 
+  // Results are part of the app, not the focused quiz: give the shell its
+  // chrome back on phones while they show.
+  useEffect(() => {
+    if (result) document.body.dataset.quizDone = '1'
+    else delete document.body.dataset.quizDone
+    return () => {
+      delete document.body.dataset.quizDone
+    }
+  }, [result])
+
   const item = items[index]
   const chosen = item ? answers[item.id] : undefined
   const subject = subjectName(subjectId)

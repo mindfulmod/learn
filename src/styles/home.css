@@ -85,10 +85,17 @@
 .home-senior .tile.hero-tile .hero-copy { max-width: 52ch; }
 .home-pair { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 760px) { .home-pair { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-.home-pair > .card { margin-top: 0; min-width: 0; }
+.home-pair > .card.tile { margin-top: 0; min-width: 0; }
 .home-senior .tile h3, .home-senior .tile b { overflow-wrap: anywhere; }
 .strengths-tile .strength-meters { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px 20px; }
 @media (min-width: 760px) { .strengths-tile .strength-meters { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .home-junior .path-tiles { grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 640px) { .home-junior .path-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .home-junior > .section:last-child, .home-senior > .card:last-child { margin-bottom: 0; }
+
+/* My Path, iteration 4: journey wide on the left, a 380px stack on the right. */
+.path-master { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (min-width: 760px) and (max-width: 1023px) { .path-master { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1024px) { .path-master { grid-template-columns: minmax(0, 1fr) 380px; gap: 24px; } }
+.path-master > .card { margin-top: 0; }
+.goal-head > .tile-icon, .goal-head > .score-ring { flex: none; }

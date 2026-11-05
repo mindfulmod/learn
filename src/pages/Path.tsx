@@ -11,6 +11,7 @@ import { goalPlan } from '../engine/plan'
 import { buildProfile } from '../engine/profile'
 import { useStore } from '../store/store'
 import { PageHeader } from '../components/PageHeader'
+import { Screen } from '../components/Screen'
 import { PathStrip } from '../components/PathStrip'
 import { FuturePreview } from '../components/FuturePreview'
 import { Empty, IconTile } from '../components/ui'
@@ -33,8 +34,7 @@ export function Path() {
   if (!goal || !plan) {
     if (junior) {
       return (
-        <>
-          <PageHeader themed hue={36} variant={0} kicker="My Path" title="Your path" lead="Every step to your dream, one at a time." />
+        <Screen header={<PageHeader themed hue={36} variant={0} kicker="My Path" title="Your path" />}>
           <div className="card pastel empty" style={{ textAlign: 'center' }}>
             <IconTile hue={36} icon={Compass} large />
             <h3>Pick a dream first.</h3>
@@ -42,17 +42,16 @@ export function Path() {
               See the paths
             </Link>
           </div>
-        </>
+        </Screen>
       )
     }
     return (
-      <>
-        <PageHeader themed hue={36} variant={0} kicker="My Path" title="Your path" lead="Pick a goal and we map every step to it." />
+      <Screen header={<PageHeader themed hue={36} variant={0} kicker="My Path" title="Your path" lead="Pick a goal and we map every step to it." />}>
         <Empty icon={Compass} title="No goal yet" body="Play the Career Finder for three matches, or browse careers and set one as your goal." action={{ to: '/finder', label: 'Find a direction' }} />
         <p className="small muted" style={{ textAlign: 'center', marginTop: 12 }}>
           Or <Link to="/careers">browse all careers</Link>
         </p>
-      </>
+      </Screen>
     )
   }
 
@@ -135,8 +134,8 @@ export function Path() {
 
   if (junior) {
     return (
-      <div className="path-page">
-        <PageHeader themed hue={36} variant={0} kicker="My Path" title={`Grade ${p.grade} to ${name}`} lead={`${journey.length} steps. You are on the first one.`} />
+      <Screen header={<PageHeader themed hue={36} variant={0} kicker="My Path" title={`Grade ${p.grade} to ${name}`} />}>
+        <div className="path-page">
 
         <section className="card pastel section" aria-label="Your journey">
           <PathStrip milestones={journey} />
@@ -163,28 +162,31 @@ export function Path() {
           </div>
         </details>
 
+        </div>
         {preview && <FuturePreview careerId={goal.id} onClose={() => setPreview(false)} />}
-      </div>
+      </Screen>
     )
   }
 
   return (
-    <div className="path-page">
-      <PageHeader
-        themed
-        hue={36}
-        variant={0}
-        kicker="My Path"
-        title={`From grade ${p.grade} to ${name}`}
-        lead={`${journey.length} steps, about ${years} years. You are at the first.`}
-        action={
-          <Link to="/careers" className="btn sm">
-            Change goal
-          </Link>
-        }
-      />
-
-      <div className="grid cols-2 section">
+    <Screen
+      header={
+        <PageHeader
+          themed
+          hue={36}
+          variant={0}
+          kicker="My Path"
+          title={`From grade ${p.grade} to ${name}`}
+          lead={`${journey.length} steps, about ${years} years. You are at the first.`}
+          action={
+            <Link to="/careers" className="btn sm">
+              Change goal
+            </Link>
+          }
+        />
+      }
+    >
+      <div className="path-page path-master section">
         <section className="card pastel" aria-label="Your journey">
           <h3>
             <MapPin size={18} aria-hidden="true" /> Every step
@@ -230,6 +232,6 @@ export function Path() {
       </div>
 
       {preview && <FuturePreview careerId={goal.id} onClose={() => setPreview(false)} />}
-    </div>
+    </Screen>
   )
 }

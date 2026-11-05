@@ -174,7 +174,7 @@ export function PictureFinder({ onSwitch }: { onSwitch?: () => void }) {
     <div className="finder pf">
       <div className="pf-prompt pf-result-head">
         <h1>You could be a…</h1>
-        <SpeakButton text={`You could be a ${words.slice(0, -1).join(', ')}, or a ${words[words.length - 1]}. Tap Peek to see more.`} iconOnly />
+        <SpeakButton text={`You could be ${words.map((w) => (/^[aeiou]/i.test(w) ? `an ${w}` : `a ${w}`)).join(', or ')}. Tap Peek to see more.`} iconOnly />
       </div>
 
       <div className="grid cols-3 section pf-results">

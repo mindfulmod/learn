@@ -5,13 +5,15 @@
 .cr-search { width: 100%; max-width: none; }
 .cr-item-title { flex: 1; min-width: 0; overflow-wrap: anywhere; line-height: 1.25; }
 .master-item .badge { flex-shrink: 0; }
-.cr-pills { display: none; }
+.tabs.pills.cr-pills { display: none; }
+.cr-search[type='search'] { padding: 10px 12px; border-radius: var(--r-sm); border: 1.5px solid var(--border); background: var(--surface); color: var(--text); font: inherit; min-height: 44px; }
+.cr-search[type='search']:focus { border-color: var(--brand); box-shadow: 0 0 0 4px var(--brand-glow); outline: none; }
 .cr-sharpen { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; min-height: 40px; }
 
 @media (max-width: 1023.98px) {
   .cr-master { padding: 0; background: transparent; border: 0; box-shadow: none; gap: 10px; }
-  .cr-master-list { display: none; }
-  .cr-pills { display: flex; margin-bottom: 0; width: 100%; }
+  .cr-master .master-list.cr-master-list { display: none; }
+  .tabs.pills.cr-pills { display: inline-flex; margin-bottom: 0; width: 100%; }
   .cr-pills button.active { color: var(--tint-strong); }
   .cr-pills svg { color: var(--tint-strong); }
 }
@@ -46,8 +48,9 @@
 .cr-row-pay { font-weight: 700; color: var(--text-2); }
 .cr-row-meta .paycoins svg { width: 15px; height: 15px; }
 .cr-row-preview { flex-shrink: 0; }
-@media (max-width: 480px) {
+@media (max-width: 640px) {
   .cr-row { flex-wrap: wrap; }
+  .cr-row-main { flex: 1 1 100%; }
   .cr-row-preview { margin-left: 62px; }
 }
 

@@ -274,12 +274,10 @@
 .master-item .tile-icon svg { width: 18px; height: 18px; }
 .detail-pane { min-height: 320px; }
 
-/* Drawer (desktop preview) */
-@media (min-width: 1024px) {
-  .preview-backdrop.drawer { justify-content: flex-end; align-items: stretch; }
-  .preview-backdrop.drawer .preview-panel { max-height: 100dvh; height: 100dvh; width: 600px; max-width: 600px; border-radius: 28px 0 0 28px; animation: slide-in 0.32s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
-}
-@keyframes slide-in { from { transform: translateX(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+/* Results screen inside a focus-mode route gets its chrome back on phones */
+body[data-quiz-done='1'] .shell.focus .tabbar { display: grid; }
+body[data-quiz-done='1'] .shell.focus .statusbar { display: flex; }
+@media (min-width: 1024px) { body[data-quiz-done='1'] .shell.focus .tabbar { display: none; } body[data-quiz-done='1'] .shell.focus .statusbar { display: flex; } }
 
 /* Quiz keeps the sidebar on desktop; focus only trims the rail */
 @media (min-width: 1024px) {
@@ -329,7 +327,7 @@
 .rail-card .steps .num.done { background: var(--good); color: #fff; }
 .rail-card .steps li.done .step-body b { color: var(--muted); text-decoration: line-through; }
 .rail-card .steps .badge { flex-shrink: 0; }
-.rail-level { display: flex; align-items: center; gap: 14px; color: inherit; }
+.card.rail-level { display: flex; align-items: center; gap: 14px; color: inherit; }
 .rail-level:hover { text-decoration: none; border-color: var(--border-strong); }
 .rail-level .ring-inner { color: var(--brand-strong); }
 .rail-level-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
@@ -340,8 +338,3 @@
 .rail-coach-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
 @media (max-width: 1023px) { .screen.has-rail .screen-body { gap: 16px; } }
 
-/* ---------- Quiz top bar as part of the app (iteration 4) -------------- */
-.page-header.quiz-header { align-items: center; flex-wrap: nowrap; margin-bottom: 12px; }
-.page-header.quiz-header > div:first-child { min-width: 0; }
-.page-header.quiz-header h1 { font-size: clamp(1.3rem, 3vw, 1.7rem); margin: 0; overflow-wrap: anywhere; }
-.page-header.quiz-header .page-header-action { display: flex; align-items: center; gap: 8px; }

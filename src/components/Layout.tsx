@@ -28,7 +28,7 @@ export function Layout() {
   const section = loc.pathname === '/' ? 'today' : loc.pathname.startsWith('/path') || loc.pathname.startsWith('/curriculum') ? 'path' : loc.pathname.startsWith('/careers') || loc.pathname.startsWith('/finder') || loc.pathname.startsWith('/discover') ? 'explore' : loc.pathname.startsWith('/practice') ? 'practice' : loc.pathname.startsWith('/progress') ? 'progress' : 'today'
 
   return (
-    <div className={`shell ${focus ? 'focus' : ''} ${mode} section-${section}`}>
+    <div className={`shell ${focus ? 'focus' : ''} ${mode} section-${section} ${section === 'explore' ? 'wide-main' : ''}`}>
       <aside className="sidebar" aria-label="Main navigation">
         <Link to="/" className="brand">
           <img src={`${base}favicon.svg`} alt="" />
