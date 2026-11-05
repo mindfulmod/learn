@@ -51,7 +51,7 @@ export const LESSONS: Lesson[] = [
     band: '1-5',
     title: 'Naming words and doing words',
     idea: 'A noun is a naming word. It names a person, place or thing. A verb is a doing word. It tells us what someone does.',
-    example: 'Read this: "Ahmed kicks the ball." Ahmed is a person, so it is a noun. Ball is a thing, so it is a noun. Kicks is what Ahmed does. It is a verb.',
+    example: 'Look at "Ahmed kicks the ball". Ahmed is a person, so it is a noun. Ball is a thing, so it is a noun. Kicks is what Ahmed does. It is a verb.',
   },
   {
     subjectId: 'english',
@@ -113,7 +113,7 @@ export const LESSONS: Lesson[] = [
     band: '1-5',
     title: 'How Pakistan was made',
     idea: 'Pakistan became a free country on 14 August 1947. Quaid-e-Azam Muhammad Ali Jinnah led the struggle. Allama Iqbal shared the dream of a Muslim homeland.',
-    example: 'Every year on 14 August, families in Lahore and Karachi put up green flags. They celebrate the day Pakistan was born. Our first leader was Quaid-e-Azam.',
+    example: 'On 14 August, families in Lahore and Karachi put up green flags. They celebrate the day Pakistan was born. Our first leader was Quaid-e-Azam.',
   },
   {
     subjectId: 'social-studies',
@@ -202,7 +202,7 @@ export const LESSONS: Lesson[] = [
     band: '11-12',
     title: 'Loops in C',
     idea: 'A loop repeats a block of code. A for loop has three parts: start, condition and update. The body runs while the condition is true, and the update moves the loop towards stopping.',
-    example: 'for (int i = 1; i <= 5; i++) sum += i; starts at 1, runs while i ≤ 5 and adds 1 each time. It adds 1 + 2 + 3 + 4 + 5, so sum ends as 15.',
+    example: 'for (int i = 1; i <= 5; i++) sum += i; starts at 1, runs while i ≤ 5 and adds 1 each time. It adds 1 to 5, so sum ends as 15.',
   },
 
   // ----------------------------------------------------------- Economics

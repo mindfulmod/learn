@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { Check, Dumbbell, Lightbulb, PartyPopper, RefreshCw, Sparkles, Target, ThumbsUp, X, Zap } from 'lucide-react'
+import { ArrowRight, BookOpen, Check, Dumbbell, Lightbulb, PartyPopper, RefreshCw, Sparkles, Target, ThumbsUp, Volume2, X, Zap } from 'lucide-react'
 import { bandForGrade, BOARD_GRADES } from '../data/boards'
 import { getCareer } from '../data/careers'
+import { lessonFor } from '../data/lessons'
 import { subjectsWithItems } from '../data/quizzes'
 import { getSubject, subjectName } from '../data/subjects'
-import { buildProfile, subjectStrength } from '../engine/profile'
+import { modeFor, speak } from '../engine/mode'
+import { buildProfile, subjectStrength, type MasteryLevel } from '../engine/profile'
 import { buildQuiz, QUIZ_LENGTH, summariseAttempt } from '../engine/quiz'
 import { attemptXp, levelFor, totalXp, XP } from '../engine/xp'
 import { useStore } from '../store/store'
@@ -22,6 +24,26 @@ const LETTER_HUES = [258, 320, 36, 160]
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F']
 const URDU = /[؀-ۿ]/
 
+const JUNIOR_STATUS: Record<MasteryLevel, string> = {
+  'not-practised': 'Not started',
+  'needs-work': 'Started',
+  developing: 'Started',
+  strong: 'Going well',
+}
+
+/** Confetti only, for junior mode (the shared Celebrate toast shows XP). */
+function Confetti() {
+  return (
+    <div className="celebrate" aria-hidden="true">
+      <div className="confetti">
+        {Array.from({ length: 28 }, (_, i) => (
+          <i key={i} style={{ ['--i' as string]: i, ['--h' as string]: (i * 47) % 360 }} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export function Practice() {
   const { subjectId } = useParams()
   const { state } = useStore()
@@ -29,6 +51,7 @@ export function Practice() {
   const ownBand = bandForGrade(p.boardId, p.grade)
   const [band, setBand] = useState<GradeBand>(ownBand)
   const profile = useMemo(() => buildProfile(state), [state])
+  const junior = modeFor(state.profile) === 'junior'
 
   if (subjectId) return <Quiz key={subjectId} subjectId={subjectId} band={band} />
 
@@ -39,7 +62,14 @@ export function Practice() {
 
   return (
     <>
-      <PageHeader kicker="Practice" title="Pick a subject" lead={`${QUIZ_LENGTH} questions a round. Harder when you're winning, kinder when you're not.`} />
+      <PageHeader
+        kicker="Practice"
+        title="Pick a subject"
+        lead={junior ? 'Learn a little, then try a few.' : `${QUIZ_LENGTH} questions a round. Harder when you're winning, kinder when you're not.`}
+        themed
+        hue={160}
+        variant={1}
+      />
       <div className="tabs pills" role="tablist" aria-label="Grade band">
         {BANDS.map((b) => (
           <button key={b} role="tab" aria-selected={band === b} className={`btn sm ${band === b ? 'active' : ''}`} onClick={() => setBand(b)}>
@@ -48,7 +78,7 @@ export function Practice() {
           </button>
         ))}
       </div>
-      <div className="grid cols-3 course-grid">
+      <div className={`grid cols-3 course-grid ${junior ? 'junior-courses' : ''}`}>
         {sorted.map((id) => {
           const s = profile.subjects[id]
           const subj = getSubject(id)
@@ -61,7 +91,9 @@ export function Practice() {
               </Ring>
               <div className="course-body">
                 <h3>{subjectName(id)}</h3>
-                <span className="course-status">{s ? `${s.attempts} round${s.attempts === 1 ? '' : 's'} · ${s.accuracy}%` : 'Not started'}</span>
+                <span className="course-status">
+                  {junior ? JUNIOR_STATUS[s?.level ?? 'not-practised'] : s ? `${s.attempts} round${s.attempts === 1 ? '' : 's'} · ${s.accuracy}%` : 'Not started'}
+                </span>
                 {must.has(id) && (
                   <span className="course-meta">
                     <span className="chip must">
@@ -71,9 +103,11 @@ export function Practice() {
                   </span>
                 )}
               </div>
-              <span className="course-xp" aria-label="Up to 80 XP">
-                +80 XP
-              </span>
+              {!junior && (
+                <span className="course-xp" aria-label="Up to 80 XP">
+                  +80 XP
+                </span>
+              )}
             </Link>
           )
         })}

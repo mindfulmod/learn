@@ -1,11 +1,12 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Check, Compass, Dumbbell, Eye, Flag, Flame, Lightbulb, Medal, Puzzle, Target, Zap, type LucideIcon } from 'lucide-react'
 import { AREA_NAMES } from '../data/discovery'
 import { subjectName } from '../data/subjects'
 import { AREAS } from '../engine/discovery'
 import { buildFeedback } from '../engine/feedback'
-import { buildProfile, streak } from '../engine/profile'
+import { modeFor } from '../engine/mode'
+import { buildProfile, streak, type MasteryLevel } from '../engine/profile'
 import { badges, LEVELS, levelFor, totalXp, weeklyMissions } from '../engine/xp'
 import { useStore } from '../store/store'
 import { Empty, FeedbackCard, IconTile, LevelBadge, Meter } from '../components/ui'
@@ -25,7 +26,93 @@ const BADGE_META: Record<string, { icon: LucideIcon; hue: number }> = {
   'ten-rounds': { icon: Dumbbell, hue: 300 },
 }
 
+const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+const JUNIOR_LEVEL: Record<MasteryLevel, string> = { strong: 'Strong', developing: 'Developing', 'needs-work': 'Keep going', 'not-practised': 'Keep going' }
+
 export function Progress() {
+  const { state } = useStore()
+  return modeFor(state.profile) === 'junior' ? <JuniorProgress /> : <SeniorProgress />
+}
+
+function JuniorProgress() {
+  const { state } = useStore()
+  const profile = useMemo(() => buildProfile(state), [state])
+  const badgeList = useMemo(() => [...badges(state)].sort((a, b) => Number(b.earned) - Number(a.earned)), [state])
+  const [week] = useState(() => {
+    const ms = Date.now()
+    return Array.from({ length: 7 }, (_, i) => {
+      const key = new Date(ms - (6 - i) * 86400000).toISOString().slice(0, 10)
+      return { key, letter: DAY_LETTERS[new Date(key + 'T00:00:00Z').getUTCDay()] }
+    })
+  })
+  const active = new Set(state.activeDays)
+  const st = streak(state.activeDays)
+  const subjects = Object.values(profile.subjects).sort((a, b) => b.accuracy - a.accuracy)
+
+  return (
+    <>
+      <PageHeader themed hue={140} variant={2} kicker="Progress" title="You're growing" lead="Every day you practise counts." />
+
+      <section className="card pastel section" aria-label="Streak">
+        <div className="streak-days" aria-label="Last seven days">
+          {week.map((d, i) => (
+            <span key={d.key} className={`${active.has(d.key) ? 'on' : ''} ${i === 6 ? 'today' : ''}`}>
+              {d.letter}
+            </span>
+          ))}
+        </div>
+        <h2 style={{ margin: '14px 0 0' }}>
+          <Flame size={22} className="inline-icon" aria-hidden="true" /> {st.current} day{st.current === 1 ? '' : 's'} in a row
+        </h2>
+      </section>
+
+      <section className="card section">
+        <h3>Badges</h3>
+        <div className="badge-grid">
+          {badgeList.map((b) => {
+            const meta = BADGE_META[b.id] ?? { icon: Medal, hue: 258 }
+            return (
+              <div key={b.id} className={`badge-tile ${b.earned ? '' : 'locked'}`} aria-label={`${b.name}${b.earned ? '' : ' (not yet earned)'}`}>
+                <IconTile hue={meta.hue} icon={meta.icon} />
+                <b>{b.name}</b>
+              </div>
+            )
+          })}
+        </div>
+      </section>
+
+      {!subjects.length ? (
+        <div className="progress-section">
+          <Empty icon={Puzzle} title="No practice yet" body="Play one round to see your subjects." action={{ to: '/practice', label: 'Start practising' }} />
+        </div>
+      ) : (
+        <section className="card section">
+          <h3>Subjects</h3>
+          <div className="stack">
+            {subjects.map((s) => {
+              const SubjIcon = subjectIcon(s.subjectId, s.area)
+              return (
+                <Meter
+                  key={s.subjectId}
+                  label={
+                    <span className="row" style={{ gap: 8 }}>
+                      <SubjIcon size={16} aria-hidden="true" />
+                      <Link to={`/practice/${s.subjectId}`}>{subjectName(s.subjectId)}</Link>
+                    </span>
+                  }
+                  value={s.accuracy}
+                  right={JUNIOR_LEVEL[s.level]}
+                />
+              )
+            })}
+          </div>
+        </section>
+      )}
+    </>
+  )
+}
+
+function SeniorProgress() {
   const { state } = useStore()
   const profile = useMemo(() => buildProfile(state), [state])
   const feedback = useMemo(() => buildFeedback(state, profile), [state, profile])
@@ -42,13 +129,16 @@ export function Progress() {
   return (
     <>
       <PageHeader
+        themed
+        hue={140}
+        variant={2}
         kicker="Progress"
         title={`${level.name}, level ${level.index + 1}`}
         lead={level.next !== null ? `${xp} XP · ${level.next - xp} to ${nextName}` : `${xp} XP · Top level reached`}
       />
 
       <div className="bento">
-        <div className="card tile span-2 level-tile">
+        <div className="card pastel tile span-2 level-tile">
           <Ring value={level.progress} size={96} stroke={9}>
             <Zap size={32} aria-hidden="true" />
           </Ring>
@@ -137,7 +227,7 @@ export function Progress() {
 
       {!subjects.length ? (
         <div className="progress-section">
-          <Empty icon={Puzzle} title="No practice yet" body="Your strength profile builds from practice rounds. Each one is eight questions." action={{ to: '/practice', label: 'Start practising' }} />
+          <Empty icon={Puzzle} title="No practice yet" body="Each round is eight questions." action={{ to: '/practice', label: 'Start practising' }} />
         </div>
       ) : (
         <div className="grid cols-2 progress-section">
@@ -161,9 +251,8 @@ export function Progress() {
                       right={<LevelBadge level={s.level} accuracy={s.accuracy} />}
                     />
                     <p className="small muted" style={{ margin: '4px 0 0' }}>
-                      {s.items} questions · confidence {s.confidence}
-                      {s.hardAccuracy !== null ? ` · hard questions ${s.hardAccuracy}%` : ''}
-                      {s.weakTopics.length ? ` · revise: ${s.weakTopics.slice(0, 3).join(', ')}` : ''}
+                      {s.items} questions
+                      {s.weakTopics.length ? ` · revise: ${s.weakTopics.slice(0, 2).join(', ')}` : ''}
                     </p>
                   </div>
                 )
@@ -172,7 +261,7 @@ export function Progress() {
           </div>
           <div className="card">
             <h3>Learning areas</h3>
-            <p className="small muted">Quiz evidence blended with your discovery answers. More practice makes these more accurate.</p>
+            <p className="small muted">Grows as you practise.</p>
             <div className="stack">
               {[...AREAS]
                 .sort((a, b) => profile.areas[b] - profile.areas[a])
@@ -190,7 +279,7 @@ export function Progress() {
                       value={profile.areas[a]}
                       tone="tinted"
                       hue={AREA_META[a].hue}
-                      right={`${profile.areas[a]}% · ${Math.round(profile.areaEvidence[a] * 100)}% from practice`}
+                      right={`${profile.areas[a]}%`}
                     />
                   )
                 })}
@@ -204,7 +293,7 @@ export function Progress() {
           <h2>Your coach says</h2>
         </div>
         <div className="stack">
-          {feedback.map((f, i) => (
+          {feedback.slice(0, 4).map((f, i) => (
             <FeedbackCard key={i} item={f} />
           ))}
         </div>
@@ -213,7 +302,7 @@ export function Progress() {
       {recent.length > 0 && (
         <section className="section">
           <h2>Recent rounds</h2>
-          <div className="card">
+          <div className="card soft">
             <ul className="list small recent-list">
               {recent.map((a) => (
                 <li key={a.id} className="row between">

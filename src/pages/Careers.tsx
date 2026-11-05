@@ -1,18 +1,109 @@
 import { useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { Compass, Eye, Lightbulb, Star } from 'lucide-react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { ArrowLeft, Compass, Eye, Lightbulb, Star } from 'lucide-react'
 import { CAREERS, CLUSTER_NAMES } from '../data/careers'
 import { careerLife, formatPkr } from '../data/careerLife'
+import { PATHS, pathsForInterests } from '../data/paths'
 import { CLUSTER_META, tint } from '../design'
 import { hasSignal, rankCareers } from '../engine/careers'
+import { modeFor } from '../engine/mode'
 import { buildProfile } from '../engine/profile'
 import { useStore } from '../store/store'
 import { FuturePreview } from '../components/FuturePreview'
 import { IconTile } from '../components/ui'
 import { PageHeader } from '../components/PageHeader'
 import type { CareerCluster } from '../types'
+import '../styles/home.css'
+
+const EXPLORE_HUE = 320
+
+/** The first sentence of a summary, capped at `max` words. */
+function firstSentence(text: string, max = 40): string {
+  const dot = text.indexOf('. ')
+  const s = (dot >= 0 ? text.slice(0, dot + 1) : text).trim()
+  const words = s.split(/\s+/)
+  if (words.length <= max) return s
+  return words.slice(0, max).join(' ').replace(/[.,;:!?]+$/, '') + '…'
+}
+
+function short(title: string): string {
+  return title.split(' (')[0]
+}
 
 export function Careers() {
+  const { state } = useStore()
+  return modeFor(state.profile) === 'junior' ? <JuniorExplore /> : <SeniorExplore />
+}
+
+// ------------------------------------------------------------------ Junior
+
+function JuniorExplore() {
+  const { state } = useStore()
+  const [params] = useSearchParams()
+  const [preview, setPreview] = useState<string | null>(null)
+  const path = PATHS.find((p) => p.cluster === params.get('path'))
+  const forYou = useMemo(() => pathsForInterests(state.interests).map((p) => p.cluster), [state.interests])
+  const ordered = useMemo(() => [...PATHS].sort((a, b) => (forYou.includes(a.cluster) ? forYou.indexOf(a.cluster) : 99) - (forYou.includes(b.cluster) ? forYou.indexOf(b.cluster) : 99)), [forYou])
+
+  if (!path) {
+    return (
+      <>
+        <PageHeader themed hue={EXPLORE_HUE} kicker="Explore" title="Which path looks fun?" />
+        <div className="grid cols-3 path-grid">
+          {ordered.map((p) => (
+            <Link key={p.cluster} to={`?path=${p.cluster}`} className="card pastel lift" style={tint(p.hue)}>
+              <div className="path-top">
+                <IconTile hue={p.hue} icon={CLUSTER_META[p.cluster].icon} />
+                {forYou.includes(p.cluster) && <span className="badge tinted">For you</span>}
+              </div>
+              <h3>{p.title}</h3>
+              <p>{p.promise}</p>
+            </Link>
+          ))}
+        </div>
+      </>
+    )
+  }
+
+  const meta = CLUSTER_META[path.cluster]
+  const careers = CAREERS.filter((c) => c.cluster === path.cluster).sort((a, b) => {
+    const ia = path.lead.indexOf(a.id)
+    const ib = path.lead.indexOf(b.id)
+    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib)
+  })
+
+  return (
+    <>
+      <Link to="/careers" className="path-back">
+        <ArrowLeft size={18} aria-hidden="true" /> All paths
+      </Link>
+      <div style={tint(path.hue)}>
+        <PageHeader themed hue={path.hue} kicker="Explore" title={path.title} lead={path.promise} />
+      </div>
+      <section className="card" style={tint(path.hue)}>
+        <ul className="steps career-rows">
+          {careers.map((c) => (
+            <li key={c.id}>
+              <IconTile hue={path.hue} icon={meta.icon} />
+              <span className="step-body">
+                <b>{short(c.title)}</b>
+                <span>{firstSentence(c.summary, 14)}</span>
+              </span>
+              <button type="button" className="btn sm primary" onClick={() => setPreview(c.id)}>
+                <Eye size={16} aria-hidden="true" /> Preview
+              </button>
+            </li>
+          ))}
+        </ul>
+      </section>
+      {preview && <FuturePreview careerId={preview} onClose={() => setPreview(null)} />}
+    </>
+  )
+}
+
+// ------------------------------------------------------------------ Senior
+
+function SeniorExplore() {
   const { state } = useStore()
   const nav = useNavigate()
   const [cluster, setCluster] = useState<CareerCluster | 'all'>('all')
@@ -22,18 +113,17 @@ export function Careers() {
   const signal = hasSignal(state)
   const ranked = useMemo(() => (signal ? rankCareers(state, profile) : CAREERS.map((career) => ({ career, score: null as number | null }))), [signal, state, profile])
 
-  const visible = ranked.filter((r) => (cluster === 'all' || r.career.cluster === cluster) && (!query || r.career.title.toLowerCase().includes(query.toLowerCase()) || r.career.summary.toLowerCase().includes(query.toLowerCase())))
+  const q = query.toLowerCase()
+  const visible = ranked.filter((r) => (cluster === 'all' || r.career.cluster === cluster) && (!q || r.career.title.toLowerCase().includes(q) || r.career.summary.toLowerCase().includes(q)))
 
   return (
     <>
       <PageHeader
+        themed
+        hue={EXPLORE_HUE}
         kicker="Explore"
         title="Careers"
-        lead={
-          signal
-            ? 'Ranked by how well each career fits what we know about you. Preview any of them to see your path, year by year.'
-            : 'Browse careers and preview what each one would look like for you, year by year.'
-        }
+        lead={signal ? 'Ranked by fit. Preview any to see your path.' : 'Preview any career to see your path, year by year.'}
         action={
           <Link to="/finder" className="btn sm">
             <Compass size={16} aria-hidden="true" />
@@ -44,7 +134,7 @@ export function Careers() {
 
       {!signal && state.finder && (
         <Link to="/discover" className="btn" style={{ marginBottom: 20 }}>
-          <Lightbulb size={18} aria-hidden="true" /> Sharpen these results with the discovery quiz
+          <Lightbulb size={18} aria-hidden="true" /> Sharpen results with the discovery quiz
         </Link>
       )}
 
@@ -97,12 +187,9 @@ export function Careers() {
                   {score !== null && <span className={`badge ${score >= 70 ? 'good' : score >= 50 ? 'warn' : ''}`}>{score}% fit</span>}
                 </span>
               </div>
-              <span className="badge tinted" style={{ marginBottom: 8 }}>
-                {CLUSTER_NAMES[career.cluster]}
-              </span>
-              <h3 style={{ overflowWrap: 'anywhere' }}>{career.title}</h3>
+              <h3 style={{ overflowWrap: 'anywhere', marginTop: 12 }}>{career.title}</h3>
               <p className="small" style={{ margin: '0 0 12px', color: 'var(--text-2)' }}>
-                {career.summary}
+                {firstSentence(career.summary)}
               </p>
               {life && (
                 <p className="small muted" style={{ margin: '0 0 12px' }}>

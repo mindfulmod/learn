@@ -7,6 +7,7 @@ import { subjectsWithItems } from '../data/quizzes'
 import { getStream, streamsFor } from '../data/streams'
 import { unitsForGrade } from '../data/subjects'
 import { bandForGrade } from '../data/boards'
+import { modeFor } from '../engine/mode'
 import { buildProfile } from '../engine/profile'
 import { useStore } from '../store/store'
 import { LevelBadge, SubjectTile } from '../components/ui'
@@ -32,10 +33,11 @@ export function Curriculum() {
   const goalMust = new Set(goals.flatMap((c) => c!.subjects.must))
   const goalHelpful = new Set(goals.flatMap((c) => c!.subjects.helpful))
   const streamObj = getStream(effectiveStream)
+  const junior = modeFor(p) === 'junior'
 
   return (
     <>
-      <PageHeader kicker={`${board.shortName} track`} title="Curriculum" lead="Pick a grade to see its subjects and what each one covers." />
+      <PageHeader themed hue={36} variant={1} kicker={`${board.shortName} track`} title="Curriculum" lead="Pick a grade to see its subjects." />
 
       <div className="tabs pills" role="tablist" aria-label="Grade">
         {BOARD_GRADES[p.boardId].map((g) => (
@@ -45,14 +47,16 @@ export function Curriculum() {
         ))}
       </div>
 
-      <div className="card accent section">
-        <span className="badge primary" style={{ marginBottom: 8 }}>
+      <div className="card pastel section">
+        <span className="badge tinted" style={{ marginBottom: 8, background: 'var(--surface)' }}>
           {board.stageLabels[stage]}
         </span>
         <h2 style={{ marginBottom: 4 }}>{gradeLabel(p.boardId, grade)}</h2>
-        <p className="small" style={{ margin: 0, color: 'var(--text-2)' }}>
-          {stageInfo.summary}
-        </p>
+        {!junior && (
+          <p className="small" style={{ margin: 0, color: 'var(--text-2)' }}>
+            {stageInfo.summary}
+          </p>
+        )}
       </div>
 
       {needsStream && (
@@ -62,7 +66,7 @@ export function Curriculum() {
             {streams.map((s) => (
               <button key={s.id} className={`choice ${effectiveStream === s.id ? 'selected' : ''}`} onClick={() => setStreamId(s.id)}>
                 <strong>{s.name}</strong>
-                <span className="small muted">{s.description}</span>
+                {!junior && <span className="small muted">{s.description}</span>}
                 <span className="chips" style={{ marginTop: 6 }}>
                   {s.leadsTo.map((c) => {
                     const ClusterIcon = CLUSTER_META[c].icon
@@ -79,7 +83,7 @@ export function Curriculum() {
           </div>
           {streamObj?.electives && (
             <p className="small muted" style={{ marginTop: 10 }}>
-              Compulsory subjects plus {streamObj.electives.pick} elective{streamObj.electives.pick > 1 ? 's' : ''} from the list below.
+              Core subjects plus {streamObj.electives.pick} elective{streamObj.electives.pick > 1 ? 's' : ''}.
             </p>
           )}
         </div>
@@ -92,7 +96,7 @@ export function Curriculum() {
         </div>
         {goals.length > 0 && (
           <p className="small muted">
-            Highlighted: <span className="chip must">must-have</span> and <span className="chip">helpful</span> for your goal{goals.length > 1 ? 's' : ''} ({goals.map((g) => g!.title).join(', ')}).
+            <span className="chip must">must-have</span> and <span className="chip">helpful</span> for your goal{goals.length > 1 ? 's' : ''}.
           </p>
         )}
         <div className="stack">
@@ -110,7 +114,7 @@ export function Curriculum() {
                     {goalMust.has(s.id) && <span className="chip must">must-have</span>}
                     {!goalMust.has(s.id) && goalHelpful.has(s.id) && <span className="chip">helpful</span>}
                     {needsStream && !compulsory && <span className="badge">elective</span>}
-                    {strength ? <LevelBadge level={strength.level} accuracy={strength.accuracy} /> : null}
+                    {strength ? <LevelBadge level={strength.level} accuracy={junior ? null : strength.accuracy} /> : null}
                   </span>
                 </summary>
                 <p className="small" style={{ marginTop: 12, color: 'var(--text-2)' }}>
