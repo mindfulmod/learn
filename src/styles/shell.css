@@ -127,6 +127,7 @@
 .path-strip { list-style: none; margin: 0; padding: 4px 0; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; counter-reset: node; }
 .path-strip::-webkit-scrollbar { display: none; }
 .path-strip li { position: relative; flex: 1 0 120px; display: flex; flex-direction: column; gap: 4px; padding-top: 4px; }
+.path-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .path-strip li::before { content: ''; position: absolute; top: 20px; left: 36px; right: -6px; height: 3px; background: var(--border); border-radius: 2px; }
 .path-strip li:last-child::before { display: none; }
 .path-strip li.current::before { background: linear-gradient(90deg, var(--brand), var(--border)); }
@@ -140,8 +141,9 @@
 .path-strip:not(.compact) li { flex: none; flex-direction: row; align-items: flex-start; gap: 14px; padding: 0 0 22px; }
 .path-strip:not(.compact) li::before { top: 40px; left: 17px; right: auto; bottom: -4px; width: 3px; height: auto; }
 .path-strip:not(.compact) li .path-node { width: 40px; height: 40px; flex-shrink: 0; }
-.path-strip:not(.compact) li > span:not(.path-node) { display: block; }
-.path-strip:not(.compact) .path-body { display: flex; flex-direction: column; }
+.path-strip:not(.compact) .path-body { flex: 1; padding-top: 6px; }
+.junior .path-detail { display: none; }
+.junior .path-strip:not(.compact) li { padding-bottom: 16px; }
 
 /* Missions */
 .missions { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }

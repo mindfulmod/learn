@@ -68,7 +68,7 @@ function JuniorProgress() {
 
       <section className="card section">
         <h3>Badges</h3>
-        <div className="badge-grid">
+        <div className="badge-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(96px, 1fr))' }}>
           {badgeList.map((b) => {
             const meta = BADGE_META[b.id] ?? { icon: Medal, hue: 258 }
             return (
@@ -142,7 +142,7 @@ function SeniorProgress() {
           <Ring value={level.progress} size={96} stroke={9}>
             <Zap size={32} aria-hidden="true" />
           </Ring>
-          <div className="level-tile-body">
+          <div className="level-tile-body" style={{ minWidth: 0, maxWidth: '100%' }}>
             <span className="tile-label">Level</span>
             <h3>{level.name}</h3>
             <ol className="level-ladder" aria-label="Levels">
@@ -210,7 +210,7 @@ function SeniorProgress() {
               {badgeList.filter((b) => b.earned).length} of {badgeList.length} earned
             </span>
           </div>
-          <div className="badge-grid">
+          <div className="badge-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(96px, 1fr))' }}>
             {badgeList.map((b) => {
               const meta = BADGE_META[b.id] ?? { icon: Medal, hue: 258 }
               return (

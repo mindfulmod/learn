@@ -21,9 +21,11 @@ export function PathStrip({ milestones, to, compact }: { milestones: Milestone[]
             <span className="path-node">
               <Icon size={16} strokeWidth={2.4} aria-hidden="true" />
             </span>
-            <span className="path-age">Age {m.age}</span>
-            <span className="path-title">{m.title}</span>
-            {!compact && <span className="path-detail small">{m.detail}</span>}
+            <span className="path-body">
+              <span className="path-age">Age {m.age}</span>
+              <span className="path-title">{m.title}</span>
+              {!compact && <span className="path-detail small">{m.detail}</span>}
+            </span>
           </li>
         )
       })}

@@ -37,7 +37,7 @@ export function buildFeedback(state: StudentState, profile: StrengthProfile): Fe
     out.push({
       kind: 'strength',
       title: `${subjectName(s.subjectId)} is a real strength`,
-      body: `${name}, you are scoring ${s.accuracy}% across ${s.items} questions${s.hardAccuracy !== null && s.hardAccuracy >= 70 ? ', including the hard ones' : ''}. ${s.trend === 'up' ? 'And you are still improving.' : 'Keep it sharp with a quick practice each week.'}`,
+      body: `${name}, ${s.accuracy}% across ${s.items} questions${s.hardAccuracy !== null && s.hardAccuracy >= 70 ? ', hard ones too' : ''}. ${s.trend === 'up' ? 'Still improving.' : 'Practise weekly to keep it.'}`,
     })
   }
   const improving = subjects.filter((s) => s.trend === 'up' && s.attempts >= 2)
@@ -45,8 +45,8 @@ export function buildFeedback(state: StudentState, profile: StrengthProfile): Fe
     const s = improving[0]
     out.push({
       kind: 'strength',
-      title: `You are climbing in ${subjectName(s.subjectId)}`,
-      body: `Your recent scores (${s.recentAccuracy}%) are better than when you started (${s.accuracy}% overall). Effort is showing.`,
+      title: `Climbing in ${subjectName(s.subjectId)}`,
+      body: `Recent scores (${s.recentAccuracy}%) beat your overall ${s.accuracy}%. Effort is showing.`,
     })
   }
 
@@ -54,13 +54,14 @@ export function buildFeedback(state: StudentState, profile: StrengthProfile): Fe
   const goal = state.goals[0] ? getCareer(state.goals[0]) : undefined
   const plan = goal ? goalPlan(goal, p, profile) : null
   const goalGap = plan?.gaps[0]
+  const goalName = goal ? goal.title.split(' (')[0] : ''
   if (goalGap) {
     const s = profile.subjects[goalGap.subjectId]
     const topics = s?.weakTopics.slice(0, 2)
     out.push({
       kind: 'gap',
-      title: `${goalGap.name} needs attention for your ${goal!.title} goal`,
-      body: `You are at ${goalGap.accuracy}%. ${topics?.length ? `Start with: ${topics.join(' and ')}.` : 'A few more practice rounds will show exactly which topics to revise.'}`,
+      title: `${goalGap.name} needs work for ${goalName}`,
+      body: `You are at ${goalGap.accuracy}%. ${topics?.length ? `Start with ${topics.join(' and ')}.` : 'A few more rounds will show what to revise.'}`,
       action: { label: `Practise ${goalGap.name}`, to: `/practice/${goalGap.subjectId}` },
     })
   } else {
@@ -70,7 +71,7 @@ export function buildFeedback(state: StudentState, profile: StrengthProfile): Fe
       out.push({
         kind: 'gap',
         title: `Let us fix ${subjectName(s.subjectId)} together`,
-        body: `${s.accuracy}% so far. ${s.weakTopics.length ? `Revise ${s.weakTopics.slice(0, 2).join(' and ')} first, then try again.` : 'Read the explanations after each question; they are written to teach, not just to mark.'}`,
+        body: `${s.accuracy}% so far. ${s.weakTopics.length ? `Revise ${s.weakTopics.slice(0, 2).join(' and ')}, then retry.` : 'Read each explanation; they are written to teach.'}`,
         action: { label: 'Practise again', to: `/practice/${s.subjectId}` },
       })
     }
@@ -81,39 +82,39 @@ export function buildFeedback(state: StudentState, profile: StrengthProfile): Fe
     out.push({
       kind: 'gap',
       title: `Topic to revise: ${t}`,
-      body: `In ${subjectName(s.subjectId)}, "${t}" has tripped you up more than once. Ask a teacher or watch a short video on it, then practise.`,
+      body: `"${t}" in ${subjectName(s.subjectId)} keeps tripping you up. Ask a teacher, then practise.`,
     })
   }
 
   // 3. Habits
   const st = streak(state.activeDays)
   if (st.current >= 3) {
-    out.push({ kind: 'habit', title: `${st.current}-day streak`, body: 'Practising a little every day beats cramming. Keep the chain going.' })
+    out.push({ kind: 'habit', title: `${st.current}-day streak`, body: 'A little every day beats cramming. Keep it going.' })
   } else if (state.attempts.length && st.current === 0) {
-    out.push({ kind: 'habit', title: 'Pick the streak back up', body: 'A 10-minute practice today restarts your streak. Small and steady wins.', action: { label: 'Practise now', to: '/practice' } })
+    out.push({ kind: 'habit', title: 'Pick the streak back up', body: 'Ten minutes today restarts your streak. Small and steady wins.', action: { label: 'Practise now', to: '/practice' } })
   }
 
   // 4. Goal and discovery nudges
   if (goal && !state.previewed.includes(goal.id)) {
     out.push({
       kind: 'goal',
-      title: `See your future as a ${goal.title.split(' (')[0].toLowerCase()}`,
-      body: 'Year by year: what you study, the exams on the way, your first job, and what life looks like ten years in.',
+      title: `See your future as a ${goalName.toLowerCase()}`,
+      body: 'Year by year: study, exams, first job and life ten years in.',
       action: { label: 'Peer into your future', to: `/careers/${goal.id}?preview=1` },
     })
   }
   if (!state.goals.length && !state.finder) {
     out.push({
       kind: 'discover',
-      title: 'Not sure what you want to be? Play the finder',
-      body: 'Eight quick "would you rather" questions, three futures worth a look. It takes about three minutes.',
+      title: 'Not sure yet? Play the finder',
+      body: 'Eight quick "would you rather" questions, three futures. About three minutes.',
       action: { label: 'Open the Career Finder', to: '/finder' },
     })
   } else if (!state.discovery) {
     out.push({
       kind: 'discover',
       title: 'Discover what suits you',
-      body: 'Answer 24 quick statements and we will show which careers match your interests and the subjects to focus on.',
+      body: 'Answer 24 quick statements to see careers and subjects that suit you.',
       action: { label: 'Start discovery', to: '/discover' },
     })
   } else if (!state.goals.length) {
@@ -122,7 +123,7 @@ export function buildFeedback(state: StudentState, profile: StrengthProfile): Fe
     out.push({
       kind: 'goal',
       title: 'Set a goal to get a roadmap',
-      body: `You came out as a ${traits}. ${ranked.map((r) => r.career.title).join(' and ')} look like good fits. Pick one to see the subjects and stream you need.`,
+      body: `You are a ${traits}. ${ranked.map((r) => r.career.title).join(' and ')} fit well. Pick one for a roadmap.`,
       action: { label: 'Explore careers', to: '/careers' },
     })
   }
@@ -131,8 +132,8 @@ export function buildFeedback(state: StudentState, profile: StrengthProfile): Fe
     if (plan.streamMatches === false) {
       out.push({
         kind: 'goal',
-        title: `Your current group does not lead to ${goal.title}`,
-        body: `${goal.title} usually needs ${plan.recommendedStreamName}. Talk to a teacher or counsellor about whether a change is possible, or look at related careers that fit your group.`,
+        title: `Your group does not lead to ${goalName}`,
+        body: `${goalName} usually needs ${plan.recommendedStreamName}. Ask a teacher about switching, or see related careers.`,
         action: { label: 'See related careers', to: `/careers/${goal.id}` },
       })
     }
@@ -141,15 +142,15 @@ export function buildFeedback(state: StudentState, profile: StrengthProfile): Fe
       out.push({
         kind: 'next',
         title: `Try a ${unpractised[0].name} practice`,
-        body: `It is a must-have subject for ${goal.title}, and you have not practised it here yet. One round tells us where you stand.`,
+        body: `A must-have for ${goalName}, not practised yet. One round shows where you stand.`,
         action: { label: `Practise ${unpractised[0].name}`, to: `/practice/${unpractised[0].subjectId}` },
       })
     }
     if (plan.currentFocus.length) {
       out.push({
         kind: 'next',
-        title: `This year's focus for ${goal.title}`,
-        body: plan.currentFocus.join(' · '),
+        title: `This year's focus for ${goalName}`,
+        body: plan.currentFocus.slice(0, 2).join(' · '),
       })
     }
   }
@@ -163,8 +164,8 @@ export function buildFeedback(state: StudentState, profile: StrengthProfile): Fe
         kind: 'strength',
         title: `${AREA_NAMES[bestArea]} suits you`,
         body: profile.areaEvidence[bestArea] > 0.3
-          ? 'Both your practice results and your interests point the same way. Careers that use this area are worth a close look.'
-          : 'Your interests point here. Practise the related subjects to confirm it with real results.',
+          ? 'Your practice and interests agree. Look at careers that use it.'
+          : 'Your interests point here. Practise related subjects to confirm it.',
       })
     }
   }
@@ -173,7 +174,7 @@ export function buildFeedback(state: StudentState, profile: StrengthProfile): Fe
     out.push({
       kind: 'next',
       title: 'Take your first practice quiz',
-      body: 'Eight questions from your own grade. The results start your strength profile and unlock personalised feedback.',
+      body: 'Eight questions from your grade. Results start your strength profile.',
       action: { label: 'Choose a subject', to: '/practice' },
     })
   }

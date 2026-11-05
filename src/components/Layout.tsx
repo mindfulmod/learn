@@ -49,7 +49,7 @@ export function Layout() {
           <span>
             <b>{level.name}</b>
             <span className="small">
-              {level.next ? `${level.next - xp} XP to ${levelFor(level.next).name}` : 'Top level'}
+              {mode === 'junior' ? 'Keep going' : level.next ? `${level.next - xp} XP to ${levelFor(level.next).name}` : 'Top level'}
             </span>
           </span>
         </Link>
@@ -68,9 +68,9 @@ export function Layout() {
             <Flame size={16} aria-hidden="true" />
             {st.current}
           </span>
-          <span className="stat-chip xp" title="Experience points">
+          <span className="stat-chip xp" title={mode === 'junior' ? 'Your level' : 'Experience points'}>
             <Sparkles size={16} aria-hidden="true" />
-            {xp} XP
+            {mode === 'junior' ? level.name : `${xp} XP`}
           </span>
           <Link to="/settings" className="avatar-chip" aria-label="Settings">
             <span className="avatar" aria-hidden="true">

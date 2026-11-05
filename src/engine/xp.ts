@@ -1,5 +1,6 @@
 import { getCareer } from '../data/careers'
 import { subjectsWithItems } from '../data/quizzes'
+import { subjectName } from '../data/subjects'
 import { bandForGrade } from '../data/boards'
 import type { QuizAttempt, StudentState } from '../types'
 import { streak, subjectStrength } from './profile'
@@ -123,7 +124,7 @@ export function weeklyMissions(state: StudentState): Mission[] {
 }
 
 function pretty(id: string): string {
-  return id.replace(/-/g, ' ').replace(/^\w/, (c) => c.toUpperCase())
+  return subjectName(id)
 }
 
 // ---------------------------------------------------------------- Badges
