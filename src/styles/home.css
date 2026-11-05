@@ -99,3 +99,115 @@
 @media (min-width: 1024px) { .path-master { grid-template-columns: minmax(0, 1fr) 380px; gap: 24px; } }
 .path-master > .card { margin-top: 0; }
 .goal-head > .tile-icon, .goal-head > .score-ring { flex: none; }
+
+/* =========================================================================
+   Iteration 5: resume card, rail groups, the road.
+   ========================================================================= */
+
+/* ---------------------------------------------------------------- Resume card */
+.resume-card {
+  display: flex; align-items: flex-start; gap: 20px; min-width: 0;
+  padding: 28px; border-radius: var(--r-lg); background: var(--tint-soft);
+}
+.resume-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.resume-card .kicker { color: var(--tint-strong); }
+.resume-card h2 { margin: 0; font-size: 2rem; line-height: 1.15; color: var(--text); overflow-wrap: anywhere; }
+.resume-line { margin: 0; font-size: 1rem; font-weight: 600; color: var(--text-2); }
+.resume-icon {
+  flex: none; width: 88px; height: 88px; border-radius: 28px; display: grid; place-items: center;
+  background: var(--tint-gradient); color: #fff; box-shadow: 0 12px 28px -10px var(--tint-glow);
+}
+.resume-dots { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+.resume-dots span { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--tint); background: var(--surface); }
+.resume-dots span.on { background: var(--tint); }
+.resume-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin-top: 12px; }
+.resume-actions .btn.primary { min-height: 52px; padding: 0 24px; font-size: 1rem; }
+
+/* Done for today: calm, no colour block, a quiet extra. */
+.resume-card.is-done-today { background: var(--surface-2); }
+.resume-card.is-done-today .kicker { color: var(--muted); }
+.resume-card.is-done-today .resume-icon { background: var(--surface); color: var(--good); box-shadow: none; border: 2px solid var(--good); }
+
+.home-junior .resume-card { min-height: 220px; }
+.home-junior .resume-card h2 { font-size: 2rem; }
+
+@media (max-width: 520px) {
+  .resume-card { padding: 20px; gap: 14px; }
+  .resume-card h2 { font-size: 1.5rem; }
+  .resume-icon { width: 56px; height: 56px; border-radius: 18px; }
+  .resume-icon svg { width: 28px; height: 28px; }
+  .home-junior .resume-card { min-height: 0; }
+  .home-junior .resume-card h2 { font-size: 1.5rem; }
+}
+
+/* Strengths zero state */
+.strength-zero { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px 16px; }
+.strength-zero p { min-width: 0; flex: 1 1 200px; }
+
+/* ---------------------------------------------------------------- Rail groups */
+/* Plain groups separated by space, each with a kicker. No cards. */
+.rail-groups { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+.rail-group { border: none; background: none; padding: 0; box-shadow: none; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.rail-group > .kicker { display: block; font-size: 0.75rem; }
+.rail-group-head { display: flex !important; justify-content: space-between; gap: 8px; }
+.rail-group-line { margin: 0; font-weight: 700; overflow-wrap: anywhere; }
+.rail-group .chips { margin: 0; }
+.rail-group > .badge { align-self: flex-start; }
+.rail-rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.rail-rows li > a { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 8px 0; color: inherit; border-bottom: 1px solid var(--border); }
+.rail-rows li:last-child > a { border-bottom: 0; }
+.rail-rows li > a:hover { text-decoration: none; color: var(--brand-strong); }
+.rail-rows li > a > svg { flex: none; color: var(--muted); }
+.rail-row-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.rail-row-body b { font-size: 0.875rem; line-height: 1.3; overflow-wrap: anywhere; }
+.rail-row-body span { font-size: 0.875rem; color: var(--muted); }
+.rail-check { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border-strong); display: grid; place-items: center; }
+.rail-check.on { background: var(--good); border-color: var(--good); color: #fff; }
+.rail-rows li.done b { color: var(--muted); text-decoration: line-through; }
+.rail-xp { flex: none; font-size: 0.75rem; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* ---------------------------------------------------------------- The road (My Path) */
+.road-page { display: grid; gap: 24px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (min-width: 1024px) {
+  .road-page { grid-template-columns: minmax(0, 1fr) 320px; }
+  .road-side { position: sticky; top: 16px; }
+}
+.road-main { min-width: 0; }
+.road-side { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.road-side > .card { margin-top: 0; }
+.road-side .rail-groups { margin-top: 8px; }
+.road-cta { width: 100%; }
+.road-hint { margin: 8px 0 0; }
+
+.road { width: 100%; min-width: 0; }
+.road-svg { display: block; width: 100%; height: auto; overflow: visible; font-family: var(--font-body); }
+.road-base { fill: none; stroke: var(--border); stroke-width: 24; stroke-linecap: round; stroke-linejoin: round; }
+.road-line { fill: none; stroke: var(--surface); stroke-width: 2; stroke-dasharray: 10 10; }
+.road.tall .road-base { stroke-width: 18; }
+
+.road-node { cursor: pointer; outline: none; transition: opacity 0.2s ease; }
+.road-node.future:not(.selected) { opacity: 0.55; }
+.road-hit { fill: transparent; }
+.road-dot { fill: var(--tint-soft); stroke: var(--surface); stroke-width: 3; transition: fill 0.2s ease; }
+.road-icon { color: var(--tint-strong); }
+.road-node:hover .road-dot { fill: var(--tint-soft); stroke: var(--tint); }
+.road-node.selected .road-dot { fill: var(--tint); stroke: var(--surface); }
+.road-node.selected .road-icon { color: #fff; }
+.road-ring { fill: none; stroke: var(--tint); stroke-width: 3; }
+.road-focus { fill: none; stroke: var(--brand); stroke-width: 2; stroke-dasharray: 4 3; opacity: 0; }
+.road-node:focus, .road-node:focus-visible { outline: none; }
+.road-node:focus-visible .road-focus { opacity: 1; }
+.road-age rect { fill: var(--surface); stroke: var(--border); }
+.road-age text { font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; fill: var(--text-2); }
+.road-node.now .road-age rect, .road-node.selected .road-age rect { fill: var(--tint-soft); stroke: transparent; }
+.road-node.now .road-age text, .road-node.selected .road-age text { fill: var(--tint-strong); }
+.road-title { font-size: 14px; font-weight: 700; fill: var(--text); }
+
+.road-detail { display: flex; flex-direction: column; gap: 6px; }
+.road-detail .kicker { color: var(--muted); }
+.road-detail h3 { margin: 0; font-size: 1.25rem; overflow-wrap: anywhere; }
+.road-detail p { margin: 0; color: var(--text-2); }
+
+@media (prefers-reduced-motion: reduce) {
+  .road-node, .road-dot { transition: none; }
+}

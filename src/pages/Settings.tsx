@@ -9,9 +9,10 @@ import { sanitise, useStore } from '../store/store'
 import { PageHeader } from '../components/PageHeader'
 import { IconTile } from '../components/ui'
 import { tint } from '../design'
+import type { Prefs } from '../types'
 
 export function Settings() {
-  const { state, importState, reset, setProfile } = useStore()
+  const { state, importState, reset, setProfile, setPrefs } = useStore()
   const nav = useNavigate()
   const fileRef = useRef<HTMLInputElement>(null)
   const [message, setMessage] = useState<string | null>(null)
@@ -21,6 +22,17 @@ export function Settings() {
     { id: undefined, title: 'Automatic (by grade)', body: `Grade ${p.grade} uses ${p.grade <= 8 ? 'Junior' : 'Senior'}.` },
     { id: 'junior', title: 'Junior', body: 'Simpler, bigger, fewer words (grades 1-8).' },
     { id: 'senior', title: 'Senior', body: 'Full detail (grades 9-12).' },
+  ]
+
+  const minutes: { id: Prefs['dailyMinutes']; body: string }[] = [
+    { id: 5, body: 'Four questions a round.' },
+    { id: 10, body: 'Eight questions a round.' },
+    { id: 15, body: 'Twelve questions a round.' },
+  ]
+  const levels: { id: Prefs['difficulty']; title: string; body: string }[] = [
+    { id: 'easy', title: 'Easy', body: 'Mostly gentle questions.' },
+    { id: 'normal', title: 'Normal', body: 'A mix that follows your scores.' },
+    { id: 'hard', title: 'Hard', body: 'Mostly tougher questions.' },
   ]
 
   const exportJson = () => {
@@ -74,6 +86,42 @@ export function Settings() {
                   {on && <Check size={18} aria-hidden="true" />}
                 </strong>
                 <span className="small muted">{m.body}</span>
+              </button>
+            )
+          })}
+        </div>
+      </section>
+
+      <section className="card section" aria-labelledby="daily-title">
+        <h3 id="daily-title">Daily time</h3>
+        <div className="choices">
+          {minutes.map((m) => {
+            const on = state.prefs.dailyMinutes === m.id
+            return (
+              <button key={m.id} className={`choice ${on ? 'selected' : ''}`} aria-pressed={on} onClick={() => setPrefs({ dailyMinutes: m.id })}>
+                <strong className="row" style={{ gap: 8, justifyContent: 'space-between', flexWrap: 'nowrap' }}>
+                  {m.id} minutes
+                  {on && <Check size={18} aria-hidden="true" />}
+                </strong>
+                <span className="small muted">{m.body}</span>
+              </button>
+            )
+          })}
+        </div>
+      </section>
+
+      <section className="card section" aria-labelledby="difficulty-title">
+        <h3 id="difficulty-title">Difficulty</h3>
+        <div className="choices">
+          {levels.map((l) => {
+            const on = state.prefs.difficulty === l.id
+            return (
+              <button key={l.id} className={`choice ${on ? 'selected' : ''}`} aria-pressed={on} onClick={() => setPrefs({ difficulty: l.id })}>
+                <strong className="row" style={{ gap: 8, justifyContent: 'space-between', flexWrap: 'nowrap' }}>
+                  {l.title}
+                  {on && <Check size={18} aria-hidden="true" />}
+                </strong>
+                <span className="small muted">{l.body}</span>
               </button>
             )
           })}

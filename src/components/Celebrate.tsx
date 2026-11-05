@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { Sparkles } from 'lucide-react'
 
 /** Short burst of confetti plus an XP toast. Mount it when something is earned. */
-export function Celebrate({ xp, label, onDone }: { xp: number; label?: string; onDone?: () => void }) {
+/** Pass no xp for junior screens: the toast then shows only the label. */
+export function Celebrate({ xp, label, onDone }: { xp?: number; label?: string; onDone?: () => void }) {
   const [show, setShow] = useState(true)
   useEffect(() => {
     const t = setTimeout(() => {
@@ -22,8 +23,8 @@ export function Celebrate({ xp, label, onDone }: { xp: number; label?: string; o
       </div>
       <div className="xp-toast pop">
         <Sparkles size={18} aria-hidden="true" />
-        <b>+{xp} XP</b>
-        {label && <span>{label}</span>}
+        {xp !== undefined ? <b>+{xp} XP</b> : label && <b>{label}</b>}
+        {xp !== undefined && label && <span>{label}</span>}
       </div>
     </div>
   )

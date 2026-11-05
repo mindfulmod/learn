@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, BookOpen, Compass, Eye, GraduationCap, Hourglass, Layers, MapPin, School } from 'lucide-react'
+import { ArrowRight, Compass, Eye } from 'lucide-react'
 import { getBoard, getStage, stageForGrade } from '../data/boards'
 import { getCareer } from '../data/careers'
 import { subjectsForGrade } from '../data/curriculum'
@@ -12,13 +12,32 @@ import { buildProfile } from '../engine/profile'
 import { useStore } from '../store/store'
 import { PageHeader } from '../components/PageHeader'
 import { Screen } from '../components/Screen'
-import { PathStrip } from '../components/PathStrip'
+import { PathRoad } from '../components/PathRoad'
 import { FuturePreview } from '../components/FuturePreview'
 import { Empty, IconTile } from '../components/ui'
 import '../styles/home.css'
 
 function short(title: string): string {
   return title.split(' (')[0]
+}
+
+/** Drop "(…)" asides so names stay plain. */
+function plain(text: string): string {
+  return text.replace(/\s*\([^)]*\)/g, '').trim()
+}
+
+function clipWords(text: string, n: number): string {
+  const words = text.trim().split(/\s+/)
+  if (words.length <= n) return text.trim()
+  return words.slice(0, n).join(' ').replace(/[.,;:!?]+$/, '') + '…'
+}
+
+/** One line of at most `n` words: the whole detail if short, else its first sentence. */
+function oneLine(detail: string, n: number): string {
+  const text = plain(detail).replace(/\s+\./g, '.')
+  if (text.split(/\s+/).length <= n) return text
+  const first = text.split(/(?<=\.)\s+/)[0]
+  return clipWords(first, n)
 }
 
 export function Path() {
@@ -29,6 +48,7 @@ export function Path() {
   const journey = useMemo(() => (goal ? buildJourney(goal, p) : []), [goal, p])
   const plan = useMemo(() => (goal ? goalPlan(goal, p, profile) : null), [goal, p, profile])
   const [preview, setPreview] = useState(false)
+  const [selected, setSelected] = useState(0)
   const junior = modeFor(p) === 'junior'
 
   if (!goal || !plan) {
@@ -62,9 +82,13 @@ export function Path() {
   const pathway = goal.pathways[p.boardId]
   const name = short(goal.title)
   const years = journey[journey.length - 1]?.yearsFromNow ?? 0
+  const mustCount = subjects.filter((s) => must.has(s.id)).length
+  const sel = journey[Math.min(selected, journey.length - 1)]
+  const secName = getStream(pathway.secondary)?.name ?? pathway.secondary
+  const highName = getStream(pathway.higherSecondary)?.name ?? pathway.higherSecondary
 
   const chips = subjects.length > 0 && (
-    <div className="chips" style={{ marginBottom: 12 }}>
+    <div className="chips">
       {subjects.map((s) => (
         <span key={s.id} className={`chip ${must.has(s.id) ? 'must' : ''}`} title={must.has(s.id) ? `Must-have for ${name}` : undefined}>
           {s.name}
@@ -73,100 +97,21 @@ export function Path() {
     </div>
   )
 
-  const groupsCard = (
-    <section className="card">
-      <h3>
-        <Layers size={18} aria-hidden="true" /> Groups to choose
-      </h3>
-      <ul className="path-groups">
-        <li>
-          <span className="small">{board.stageLabels.secondary}</span>
-          <b>{getStream(pathway.secondary)?.name ?? pathway.secondary}</b>
-        </li>
-        <li>
-          <span className="small">{board.stageLabels['higher-secondary']}</span>
-          <b>{getStream(pathway.higherSecondary)?.name ?? pathway.higherSecondary}</b>
-        </li>
-      </ul>
-      {plan.streamMatches === true && <span className="badge good">On track</span>}
-      {plan.streamMatches === false && <span className="badge warn">Different from your group</span>}
-      {pathway.note && (
-        <p className="small muted" style={{ margin: '8px 0 0' }}>
-          {pathway.note}
-        </p>
-      )}
+  const yearLine = junior
+    ? `${subjects.length} subjects this year.`
+    : mustCount
+      ? `${plain(board.stageLabels[stage.id])}. ${subjects.length} subjects, ${mustCount} key for ${name}.`
+      : `${plain(board.stageLabels[stage.id])}. ${subjects.length} subjects this year.`
+
+  const detail = sel && (
+    <section className="card road-detail" aria-live="polite">
+      <span className="kicker">
+        Age {sel.age} · Step {selected + 1} of {journey.length}
+      </span>
+      <h3>{junior ? clipWords(plain(sel.title), 6) : plain(sel.title)}</h3>
+      <p>{oneLine(sel.detail, junior ? 10 : 14)}</p>
     </section>
   )
-
-  const testsList = (
-    <ul className="steps">
-      {plan.entranceTests.length > 0 && (
-        <li>
-          <span className="num" aria-hidden="true">
-            <Hourglass size={18} />
-          </span>
-          <span className="step-body">
-            <b>Tests</b>
-            <span>{plan.entranceTests.join(', ')}</span>
-          </span>
-        </li>
-      )}
-      <li>
-        <span className="num" aria-hidden="true">
-          <GraduationCap size={18} />
-        </span>
-        <span className="step-body">
-          <b>Degrees</b>
-          <span>{plan.degrees.join(', ')}</span>
-        </span>
-      </li>
-      <li>
-        <span className="num" aria-hidden="true">
-          <School size={18} />
-        </span>
-        <span className="step-body">
-          <b>Where to study</b>
-          <span>{plan.institutions.join(' · ')}</span>
-        </span>
-      </li>
-    </ul>
-  )
-
-  if (junior) {
-    return (
-      <Screen header={<PageHeader themed hue={36} variant={0} kicker="My Path" title={`Grade ${p.grade} to ${name}`} />}>
-        <div className="path-page">
-
-        <section className="card pastel section" aria-label="Your journey">
-          <PathStrip milestones={journey} />
-          <button className="btn primary" onClick={() => setPreview(true)}>
-            <Eye size={18} aria-hidden="true" /> See my future
-          </button>
-        </section>
-
-        <section className="card section">
-          <h3>
-            <BookOpen size={18} aria-hidden="true" /> This year
-          </h3>
-          {chips}
-          <Link to="/curriculum" className="small">
-            Open my subjects <ArrowRight size={14} className="inline-icon" aria-hidden="true" />
-          </Link>
-        </section>
-
-        <details className="section">
-          <summary>More about the path</summary>
-          <div className="stack" style={{ marginTop: 12 }}>
-            {groupsCard}
-            {testsList}
-          </div>
-        </details>
-
-        </div>
-        {preview && <FuturePreview careerId={goal.id} onClose={() => setPreview(false)} />}
-      </Screen>
-    )
-  }
 
   return (
     <Screen
@@ -176,8 +121,8 @@ export function Path() {
           hue={36}
           variant={0}
           kicker="My Path"
-          title={`From grade ${p.grade} to ${name}`}
-          lead={`${journey.length} steps, about ${years} years. You are at the first.`}
+          title={junior ? `Grade ${p.grade} to ${name}` : `From grade ${p.grade} to ${name}`}
+          lead={junior ? undefined : `${journey.length} steps, about ${years} years`}
           action={
             <Link to="/careers" className="btn sm">
               Change goal
@@ -186,48 +131,37 @@ export function Path() {
         />
       }
     >
-      <div className="path-page path-master section">
-        <section className="card pastel" aria-label="Your journey">
-          <h3>
-            <MapPin size={18} aria-hidden="true" /> Every step
-          </h3>
-          <PathStrip milestones={journey} />
+      <div className="road-page section">
+        <section className="road-main" aria-label="Your journey">
+          <PathRoad milestones={journey} selected={selected} onSelect={setSelected} junior={junior} />
+          <p className="small muted road-hint">{junior ? 'Tap a step to look closer.' : 'Tap a step, or use the arrow keys.'}</p>
         </section>
 
-        <div className="stack">
-          <section className="card">
-            <h3>
-              <BookOpen size={18} aria-hidden="true" /> This year
-            </h3>
-            <p className="small" style={{ color: 'var(--text-2)' }}>
-              <b>{board.stageLabels[stage.id]}</b> · {stage.summary}
-            </p>
-            {chips}
-            <Link to="/curriculum" className="small">
-              Open curriculum <ArrowRight size={14} className="inline-icon" aria-hidden="true" />
-            </Link>
-          </section>
+        <div className="road-side">
+          {detail}
+          <button className="btn primary road-cta" onClick={() => setPreview(true)}>
+            <Eye size={18} aria-hidden="true" /> {junior ? 'See my future' : 'Peer into your future'}
+          </button>
 
-          {groupsCard}
+          <div className="rail-groups">
+            <section className="rail-group" aria-label="This year">
+              <span className="kicker">This year</span>
+              <p className="rail-group-line">{yearLine}</p>
+              {chips}
+              <Link to="/curriculum" className="small">
+                {junior ? 'Open my subjects' : 'Open curriculum'} <ArrowRight size={14} className="inline-icon" aria-hidden="true" />
+              </Link>
+            </section>
 
-          <section className="card soft">
-            <h3>
-              <GraduationCap size={18} aria-hidden="true" /> Tests and degrees
-            </h3>
-            {testsList}
-          </section>
-
-          <section className="card accent">
-            <h3>
-              <Eye size={18} aria-hidden="true" /> Peer into your future
-            </h3>
-            <p className="small" style={{ color: 'var(--text-2)' }}>
-              Life as a {name.toLowerCase()}, year by year.
-            </p>
-            <button className="btn primary" onClick={() => setPreview(true)}>
-              <Eye size={18} aria-hidden="true" /> Start preview
-            </button>
-          </section>
+            <section className="rail-group" aria-label="Groups to choose">
+              <span className="kicker">Groups to choose</span>
+              <p className="rail-group-line">
+                {plain(board.stageLabels.secondary)}: {secName}. {plain(board.stageLabels['higher-secondary'])}: {highName}.
+              </p>
+              {plan.streamMatches === true && <span className="badge good">On track</span>}
+              {plan.streamMatches === false && <span className="badge warn">Different from your group</span>}
+            </section>
+          </div>
         </div>
       </div>
 

@@ -1,11 +1,11 @@
 import { useMemo } from 'react'
-import { Link } from 'react-router-dom'
-import { Compass, Dumbbell, Eye, Flag, Flame, Lightbulb, Medal, Puzzle, Target, Zap, type LucideIcon } from 'lucide-react'
+import { Link, Navigate } from 'react-router-dom'
+import { ArrowRight, Compass, Dumbbell, Eye, Flag, Flame, Lightbulb, Medal, Puzzle, Target, Zap, type LucideIcon } from 'lucide-react'
 import { AREA_NAMES } from '../data/discovery'
 import { subjectName } from '../data/subjects'
 import { AREAS } from '../engine/discovery'
 import { buildFeedback } from '../engine/feedback'
-import { modeFor } from '../engine/mode'
+import { modeFor, playsTown } from '../engine/mode'
 import { buildProfile, type MasteryLevel } from '../engine/profile'
 import { badges, LEVELS, levelFor, totalXp } from '../engine/xp'
 import { useStore } from '../store/store'
@@ -32,6 +32,7 @@ const JUNIOR_LEVEL: Record<MasteryLevel, string> = { strong: 'Strong', developin
 
 export function Progress() {
   const { state } = useStore()
+  if (playsTown(state.profile)) return <Navigate to="/stickers" replace />
   return modeFor(state.profile) === 'junior' ? <JuniorProgress /> : <SeniorProgress />
 }
 
@@ -97,7 +98,7 @@ function SeniorProgress() {
   const nextName = level.next !== null ? levelFor(level.next).name : null
   const subjects = Object.values(profile.subjects).sort((a, b) => b.accuracy - a.accuracy)
   const recent = [...state.attempts].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 12)
-  const accuracy = profile.totalItems ? Math.round((state.attempts.reduce((s, a) => s + a.correct, 0) / profile.totalItems) * 100) : 0
+  const accuracy = profile.totalItems ? Math.round((state.attempts.reduce((s, a) => s + a.correct, 0) / profile.totalItems) * 100) : null
 
   return (
     <Screen
@@ -114,32 +115,53 @@ function SeniorProgress() {
       rail={<ContextRail level={false} coach={false} />}
     >
       <div className="bento progress-bento">
-        <div className="card pastel tile span-3 level-tile">
+        <div className="card tile span-2 level-tile">
           <Ring value={level.progress} size={96} stroke={9}>
             <Zap size={32} aria-hidden="true" />
           </Ring>
-          <div className="level-tile-body" style={{ minWidth: 0, maxWidth: '100%' }}>
-            <span className="tile-label">Level</span>
+          <div className="level-tile-body">
+            <span className="tile-label">Level {level.index + 1}</span>
             <h3>{level.name}</h3>
-            <ol className="level-ladder" aria-label="Levels">
-              {LEVELS.map((l, i) => (
-                <li key={l.name} className={i === level.index ? 'current' : i < level.index ? 'reached' : ''} aria-current={i === level.index ? 'step' : undefined}>
-                  <b>{l.name}</b>
-                  <span>{l.min} XP</span>
-                </li>
-              ))}
-            </ol>
+            {nextName && level.next !== null ? (
+              <p className="level-next">
+                <b>{level.next - xp} XP</b> to {nextName}
+              </p>
+            ) : (
+              <p className="level-next">Top level reached</p>
+            )}
+            <details className="level-all">
+              <summary>All levels</summary>
+              <ol className="level-ladder" aria-label="Levels">
+                {LEVELS.map((l, i) => (
+                  <li key={l.name} className={i === level.index ? 'current' : i < level.index ? 'reached' : ''} aria-current={i === level.index ? 'step' : undefined}>
+                    <b>{l.name}</b>
+                    <span>{l.min} XP</span>
+                  </li>
+                ))}
+              </ol>
+            </details>
           </div>
         </div>
-        <div className="card tile stat-tile" style={tint(160)}>
+        <div className="card tile span-2 stat-tile" style={tint(160)}>
           <div className="tile-head">
             <span className="tile-label">Accuracy</span>
             <Target size={20} aria-hidden="true" />
           </div>
-          <span className="big">{accuracy}%</span>
-          <p className="stat-sub">
-            {state.attempts.length} round{state.attempts.length === 1 ? '' : 's'} · {profile.totalItems} questions
-          </p>
+          {accuracy === null ? (
+            <div className="stat-empty">
+              <b>No rounds yet</b>
+              <Link to="/practice" className="btn primary">
+                Start <ArrowRight size={18} aria-hidden="true" />
+              </Link>
+            </div>
+          ) : (
+            <>
+              <span className="big">{accuracy}%</span>
+              <p className="stat-sub">
+                {state.attempts.length} round{state.attempts.length === 1 ? '' : 's'} · {profile.totalItems} questions
+              </p>
+            </>
+          )}
         </div>
       </div>
 
@@ -168,7 +190,7 @@ function SeniorProgress() {
 
       {!subjects.length ? (
         <div className="progress-section">
-          <Empty icon={Puzzle} title="No practice yet" body="Each round is eight questions." action={{ to: '/practice', label: 'Start practising' }} />
+          <Empty icon={Puzzle} title="No subjects yet" body="Your subjects show here after a round." />
         </div>
       ) : (
         <div className="grid cols-2 progress-section">

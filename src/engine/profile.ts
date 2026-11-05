@@ -115,31 +115,62 @@ export function buildProfile(state: StudentState): StrengthProfile {
   return { subjects, areas, areaEvidence, totalItems: state.attempts.reduce((s, a) => s + a.total, 0) }
 }
 
-export function streak(activeDays: string[]): { current: number; best: number } {
-  const days = [...new Set(activeDays)].sort()
-  if (!days.length) return { current: 0, best: 0 }
-  const toDate = (d: string) => new Date(d + 'T00:00:00Z').getTime()
-  const day = 86400000
+const DAY_MS = 86400000
+const dayNum = (d: string) => Math.round(new Date(d + 'T00:00:00Z').getTime() / DAY_MS)
+const dayIso = (n: number) => new Date(n * DAY_MS).toISOString().slice(0, 10)
 
-  let best = 1
-  let run = 1
-  for (let i = 1; i < days.length; i++) {
-    if (toDate(days[i]) - toDate(days[i - 1]) === day) run += 1
-    else run = 1
-    best = Math.max(best, run)
+/** Streak lengths that earn a celebration, once each. */
+export const STREAK_MILESTONES = [3, 7, 14, 30]
+
+/** The highest milestone crossed going from `before` to `after`, if any. */
+export function milestoneReached(before: number, after: number): number | null {
+  let hit: number | null = null
+  for (const m of STREAK_MILESTONES) if (before < m && after >= m) hit = m
+  return hit
+}
+
+/**
+ * Days in a row, with forgiveness: one missed single day in any rolling seven
+ * days is frozen rather than broken. Two missed days in a row break it.
+ * Frozen days keep the streak alive but do not add to it. Today never breaks
+ * a streak, since the day is not over.
+ */
+export function streak(activeDays: string[], today: string = todayKey()): { current: number; best: number; frozen: string[] } {
+  const days = new Set([...new Set(activeDays)].map(dayNum))
+  if (!days.size) return { current: 0, best: 0, frozen: [] }
+  const sorted = [...days].sort((a, b) => a - b)
+  const t = dayNum(today)
+
+  // Best: walk forward through history with the same forgiveness rule.
+  let best = 0
+  let run = 0
+  let lastFrozen: number | null = null
+  for (let d = sorted[0]; d <= sorted[sorted.length - 1]; d++) {
+    if (days.has(d)) {
+      run += 1
+      best = Math.max(best, run)
+    } else if (days.has(d + 1) && (lastFrozen === null || d - lastFrozen >= 7)) {
+      lastFrozen = d
+    } else {
+      run = 0
+      lastFrozen = null
+    }
   }
 
-  const today = new Date().toISOString().slice(0, 10)
-  const last = days[days.length - 1]
-  const gap = (toDate(today) - toDate(last)) / day
-  if (gap > 1) return { current: 0, best }
-  // Count back from the last active day.
-  let current = 1
-  for (let i = days.length - 1; i > 0; i--) {
-    if (toDate(days[i]) - toDate(days[i - 1]) === day) current += 1
-    else break
+  // Current: walk back from today (or yesterday, if today is still open).
+  let cursor = days.has(t) ? t : t - 1
+  let current = 0
+  const frozen: number[] = []
+  while (cursor >= sorted[0]) {
+    if (days.has(cursor)) {
+      current += 1
+    } else if (days.has(cursor - 1) && frozen.every((f) => f - cursor >= 7)) {
+      frozen.push(cursor)
+    } else break
+    cursor -= 1
   }
-  return { current, best }
+  if (!current) return { current: 0, best, frozen: [] }
+  return { current, best: Math.max(best, current), frozen: frozen.map(dayIso).sort() }
 }
 
 export function todayKey(): string {

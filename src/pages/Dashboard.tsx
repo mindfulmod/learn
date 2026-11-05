@@ -1,21 +1,20 @@
-import { useMemo, useState } from 'react'
+import { createElement, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Clock, Compass, Eye, Map as MapIcon, Sparkles, Zap } from 'lucide-react'
+import { ArrowRight, Check, Compass, Eye, Flame, Map as MapIcon, Play, Target, Zap, type LucideIcon } from 'lucide-react'
 import { getCareer } from '../data/careers'
 import { pathsForInterests } from '../data/paths'
-import { getSubject, subjectName } from '../data/subjects'
+import { subjectName } from '../data/subjects'
 import { AREA_META, CLUSTER_META, subjectIcon, tint } from '../design'
 import { careerFit, hasSignal, rankCareers } from '../engine/careers'
 import { scoreFinder } from '../engine/finder'
 import { buildJourney } from '../engine/journey'
 import { modeFor } from '../engine/mode'
 import { goalPlan } from '../engine/plan'
-import { buildProfile } from '../engine/profile'
-import { nextStep, type NextStep } from '../engine/xp'
+import { buildProfile, todayKey, type MasteryLevel } from '../engine/profile'
+import { homeState, type HomeCard, type HomeIcon } from '../engine/xp'
 import { useStore } from '../store/store'
 import type { Career } from '../types'
 import { PageHeader } from '../components/PageHeader'
-import { Orb } from '../components/Orb'
 import { PathStrip } from '../components/PathStrip'
 import { FuturePreview } from '../components/FuturePreview'
 import { Interests } from '../components/Interests'
@@ -26,13 +25,16 @@ import '../styles/home.css'
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-const KIND_HUE: Record<Exclude<NextStep['kind'], 'practice'>, number> = { finder: 320, preview: 215, discovery: 45, goal: 258 }
-const KIND_VARIANT: Record<NextStep['kind'], number> = { practice: 0, finder: 1, preview: 2, discovery: 1, goal: 0 }
 const POPULAR = ['doctor', 'software-engineer', 'lawyer']
+
+const HOME_ICON: Record<HomeIcon, LucideIcon> = { compass: Compass, target: Target, eye: Eye, play: Play, check: Check, flame: Flame }
+const LEVEL_WORD: Record<MasteryLevel, string> = { strong: 'Strong', developing: 'Growing', 'needs-work': 'Needs work', 'not-practised': 'New' }
 
 interface Now {
   kicker: string
   greeting: string
+  hour: number
+  today: string
 }
 
 function short(title: string): string {
@@ -46,12 +48,6 @@ function clipWords(text: string, n: number): string {
   return words.slice(0, n).join(' ').replace(/[.,;:!?]+$/, '') + '…'
 }
 
-function stepHueFor(step: NextStep): number {
-  if (step.kind !== 'practice') return KIND_HUE[step.kind]
-  const s = step.subjectId ? getSubject(step.subjectId) : undefined
-  return s ? AREA_META[s.area].hue : 258
-}
-
 export function Dashboard() {
   const { state } = useStore()
   const [now] = useState<Now>(() => {
@@ -60,59 +56,123 @@ export function Dashboard() {
     return {
       kicker: `${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}`,
       greeting: h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening',
+      hour: h,
+      today: todayKey(),
     }
   })
   return modeFor(state.profile) === 'junior' ? <JuniorHome now={now} /> : <SeniorHome now={now} />
 }
 
-// ------------------------------------------------------------------ Junior
+// ------------------------------------------------------------------ Resume card
 
-function juniorHeroTitle(step: NextStep): string {
-  if (step.kind === 'preview') return 'Peek at your future'
-  return clipWords(step.title, 6)
+const SENIOR_KICKER: Record<HomeCard['state'], string> = {
+  new: 'Start here',
+  'pick-goal': 'Your matches',
+  preview: 'Next step',
+  'first-round': 'Your first round',
+  resume: 'Pick up where you left off',
+  'done-today': 'Today',
+  'streak-risk': 'Before the day ends',
 }
 
-function juniorHeroLine(step: NextStep): string {
-  switch (step.kind) {
-    case 'practice':
-      return '8 quick questions. About 6 minutes.'
-    case 'finder':
-      return 'Eight fun questions. Three futures to look at.'
-    case 'preview': {
-      const id = step.to.split('/')[2]?.split('?')[0]
-      const c = id ? getCareer(id) : undefined
-      return `See your life as a ${c ? short(c.title).toLowerCase() : 'grown-up'}, year by year.`
-    }
-    case 'discovery':
-      return '24 quick questions about you.'
-    case 'goal':
-      return 'Pick a dream to aim at.'
+const JUNIOR_KICKER: Record<HomeCard['state'], string> = {
+  new: 'Start here',
+  'pick-goal': 'Your matches',
+  preview: 'Next quest',
+  'first-round': 'First quest',
+  resume: 'Your quest',
+  'done-today': 'Today',
+  'streak-risk': 'Quick quest',
+}
+
+/** Junior copy: ten words or fewer per line, no XP, no percentages. */
+function juniorCopy(card: HomeCard): { title: string; line: string; cta: string } {
+  const career = card.meta?.careerId ? getCareer(card.meta.careerId) : undefined
+  const name = career ? short(career.title).toLowerCase() : 'grown-up'
+  const n = card.meta?.streak ?? 0
+  switch (card.state) {
+    case 'new':
+      return { title: 'Find your direction', line: 'Eight fun questions. Three futures to look at.', cta: 'Play the finder' }
+    case 'pick-goal':
+      return { title: clipWords(card.title.replace('Your top match', 'Top match'), 6), line: 'Pick a dream to aim at.', cta: 'See my matches' }
+    case 'preview':
+      return { title: 'Peek at your future', line: `Your life as a ${name}, year by year.`, cta: 'Take a peek' }
+    case 'first-round':
+      return { title: card.title, line: `Your first round. ${card.meta?.questions ?? 8} quick questions.`, cta: 'Start round' }
+    case 'resume':
+      return { title: card.title, line: `Round ${(card.meta?.rounds ?? 0) + 1}. Last time: ${card.meta?.correct ?? 0} of ${card.meta?.total ?? 0}.`, cta: 'Next round' }
+    case 'done-today':
+      return { title: 'All done for today', line: n >= 2 ? `${n} days in a row. Well done!` : 'Your streak starts today.', cta: clipWords(card.cta, 5) }
+    case 'streak-risk':
+      return { title: 'Keep your streak', line: `5 minutes keeps ${n} days going.`, cta: 'Next round' }
   }
 }
+
+/** Dots for the last round: filled for each correct answer. */
+function RoundDots({ correct, total }: { correct: number; total: number }) {
+  return (
+    <span className="resume-dots" aria-hidden="true">
+      {Array.from({ length: total }, (_, i) => (
+        <span key={i} className={i < correct ? 'on' : ''} />
+      ))}
+    </span>
+  )
+}
+
+function cardIcon(card: HomeCard): LucideIcon {
+  return card.meta?.subject && (card.state === 'resume' || card.state === 'first-round') ? subjectIcon(card.meta.subject) : HOME_ICON[card.icon]
+}
+
+function ResumeCard({ card, junior }: { card: HomeCard; junior?: boolean }) {
+  const copy = junior ? juniorCopy(card) : { title: card.title, line: card.line, cta: card.cta }
+  const kicker = (junior ? JUNIOR_KICKER : SENIOR_KICKER)[card.state]
+  const done = card.state === 'done-today'
+  const showDots = card.state === 'resume' && card.meta?.total
+  const emptyDots = card.state === 'first-round' && card.meta?.questions
+
+  return (
+    <section className={`resume-card section is-${card.state}`} style={tint(card.hue)} aria-label="Today">
+      <div className="resume-body">
+        <span className="kicker">{kicker}</span>
+        <h2>{copy.title}</h2>
+        <p className="resume-line">{copy.line}</p>
+        {showDots ? <RoundDots correct={card.meta!.correct ?? 0} total={card.meta!.total!} /> : null}
+        {emptyDots ? <RoundDots correct={0} total={card.meta!.questions!} /> : null}
+        <div className="resume-actions">
+          {done ? (
+            <>
+              <span className="small muted">{junior ? 'Want one more?' : 'One more, if you like:'}</span>
+              <Link to={card.to} className="btn sm">
+                {copy.cta} <ArrowRight size={16} aria-hidden="true" />
+              </Link>
+            </>
+          ) : (
+            <Link to={card.to} className="btn primary">
+              {copy.cta} <ArrowRight size={18} aria-hidden="true" />
+            </Link>
+          )}
+        </div>
+      </div>
+      <span className="resume-icon" aria-hidden="true">
+        {createElement(cardIcon(card), { size: junior ? 40 : 36, strokeWidth: 2 })}
+      </span>
+    </section>
+  )
+}
+
+// ------------------------------------------------------------------ Junior
 
 function JuniorHome({ now }: { now: Now }) {
   const { state } = useStore()
   const p = state.profile!
-  const step = useMemo(() => nextStep(state), [state])
+  const card = useMemo(() => homeState(state, now), [state, now])
   const paths = useMemo(() => pathsForInterests(state.interests), [state.interests])
   const firstName = p.name.split(' ')[0]
 
   return (
     <Screen header={<PageHeader kicker={now.kicker} title={`${now.greeting}, ${firstName}`} />} rail={<ContextRail />}>
       <div className="home-junior">
-        <section className="tile hero-tile section">
-          <Orb hue={stepHueFor(step)} size={200} variant={KIND_VARIANT[step.kind]} />
-          <div className="hero-copy">
-            <span className="tile-label" style={{ color: 'rgb(255 255 255 / 0.85)' }}>
-              Today
-            </span>
-            <h2>{juniorHeroTitle(step)}</h2>
-            <p>{juniorHeroLine(step)}</p>
-            <Link to={step.to} className="btn primary">
-              {step.cta} <ArrowRight size={18} aria-hidden="true" />
-            </Link>
-          </div>
-        </section>
+        <ResumeCard card={card} junior />
 
         <section className="section">
           <div className="section-head stacked">
@@ -161,7 +221,7 @@ function SeniorHome({ now }: { now: Now }) {
     if (state.finder) return scoreFinder(state.finder, state, profile).careers.slice(0, 3).map((c) => c.career)
     return POPULAR.map((id) => getCareer(id)).filter((c): c is Career => !!c)
   }, [goal, signal, state, profile])
-  const step = useMemo(() => nextStep(state), [state])
+  const card = useMemo(() => homeState(state, now), [state, now])
   const strengths = Object.values(profile.subjects)
     .sort((a, b) => b.accuracy - a.accuracy)
     .slice(0, 3)
@@ -175,32 +235,10 @@ function SeniorHome({ now }: { now: Now }) {
       rail={<ContextRail />}
     >
       <div className="home-senior">
-        {/* 1. Next step */}
-        <section className="tile hero-tile section">
-          <Orb hue={stepHueFor(step)} size={220} variant={KIND_VARIANT[step.kind]} />
-          <div className="hero-copy">
-            <span className="tile-label" style={{ color: 'rgb(255 255 255 / 0.85)' }}>
-              Next step
-            </span>
-            <h2>{step.title}</h2>
-            <p>{clipWords(step.detail, 12)}</p>
-            <div className="hero-meta">
-              <span className="badge">
-                <Clock size={14} className="inline-icon" aria-hidden="true" />
-                {step.minutes} min
-              </span>
-              <span className="badge">
-                <Sparkles size={14} className="inline-icon" aria-hidden="true" />+{step.xp} XP
-              </span>
-            </div>
-            <Link to={step.to} className="btn primary">
-              {step.cta} <ArrowRight size={18} aria-hidden="true" />
-            </Link>
-          </div>
-        </section>
+        <ResumeCard card={card} />
 
         <div className="home-pair section">
-          {/* 2. Goal */}
+          {/* Goal: one number at most (the fit ring). */}
           <section className="card tile">
             {goal && plan ? (
               <>
@@ -208,7 +246,7 @@ function SeniorHome({ now }: { now: Now }) {
                 <div className="goal-head">
                   <IconTile hue={CLUSTER_META[goal.cluster].hue} icon={CLUSTER_META[goal.cluster].icon} />
                   <div>
-                    <h3>{goal.title}</h3>
+                    <h3>{short(goal.title)}</h3>
                     {plan.recommendedStreamName && (
                       <span className="small muted">
                         Group: {plan.recommendedStreamName}{' '}
@@ -230,9 +268,11 @@ function SeniorHome({ now }: { now: Now }) {
                     ))}
                 </div>
                 <div className="row tile-foot">
-                  <button className="btn sm" onClick={() => setPreview(goal.id)}>
-                    <Eye size={16} aria-hidden="true" /> Peer into your future
-                  </button>
+                  {card.state !== 'preview' && (
+                    <button className="btn sm" onClick={() => setPreview(goal.id)}>
+                      <Eye size={16} aria-hidden="true" /> Peer into your future
+                    </button>
+                  )}
                   <Link to="/careers" className="btn sm">
                     Change
                   </Link>
@@ -256,7 +296,7 @@ function SeniorHome({ now }: { now: Now }) {
             )}
           </section>
 
-          {/* 3. Your path */}
+          {/* Path */}
           <section className="card tile">
             <span className="tile-label">
               <MapIcon size={14} aria-hidden="true" /> Your path
@@ -271,17 +311,17 @@ function SeniorHome({ now }: { now: Now }) {
             ) : (
               <>
                 <p className="muted" style={{ margin: 0 }}>
-                  Set a goal and your path appears here
+                  Set a goal and your path appears here.
                 </p>
-                <Link to="/finder" className="btn sm tile-foot" style={{ alignSelf: 'flex-start' }}>
-                  <Compass size={16} aria-hidden="true" /> {state.finder ? 'See my matches' : 'Find a direction'}
+                <Link to="/careers" className="btn sm tile-foot" style={{ alignSelf: 'flex-start' }}>
+                  <Compass size={16} aria-hidden="true" /> Browse careers
                 </Link>
               </>
             )}
           </section>
         </div>
 
-        {/* 4. Strengths */}
+        {/* Strengths: words, not numbers; a zero state with a Start button. */}
         <section className="card tile strengths-tile">
           <span className="tile-label">
             <Zap size={14} aria-hidden="true" /> Strengths
@@ -300,6 +340,7 @@ function SeniorHome({ now }: { now: Now }) {
                       </>
                     }
                     value={s.accuracy}
+                    right={LEVEL_WORD[s.level]}
                     tone="tinted"
                     hue={AREA_META[s.area].hue}
                   />
@@ -307,9 +348,15 @@ function SeniorHome({ now }: { now: Now }) {
               })}
             </div>
           ) : (
-            <p className="small muted" style={{ margin: 0 }}>
-              Practise to build your profile. <Link to="/practice">Go to practice</Link>
-            </p>
+            <div className="strength-zero">
+              <p style={{ margin: 0 }}>
+                <b>No rounds yet</b>
+                <span className="small muted"> · Your strengths show up after one round.</span>
+              </p>
+              <Link to="/practice" className="btn sm">
+                Start <ArrowRight size={16} aria-hidden="true" />
+              </Link>
+            </div>
           )}
         </section>
       </div>

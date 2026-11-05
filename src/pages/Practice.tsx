@@ -1,17 +1,17 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { ArrowRight, BookOpen, Check, Compass, Dumbbell, Eye, Flag, Lightbulb, PartyPopper, RefreshCw, Sparkles, Target, ThumbsUp, Volume2, X, Zap, type LucideIcon } from 'lucide-react'
-import { bandForGrade, BOARD_GRADES } from '../data/boards'
+import { ArrowRight, BookOpen, Check, Compass, Dumbbell, Eye, Flag, Flame, Lightbulb, PartyPopper, RefreshCw, Sparkles, Target, ThumbsUp, Volume2, X, Zap, type LucideIcon } from 'lucide-react'
+import { bandForGrade } from '../data/boards'
 import { getCareer } from '../data/careers'
 import { lessonFor } from '../data/lessons'
 import { subjectsWithItems } from '../data/quizzes'
 import { getSubject, subjectName } from '../data/subjects'
-import { modeFor, speak } from '../engine/mode'
-import { buildProfile, subjectStrength, type MasteryLevel } from '../engine/profile'
-import { buildQuiz, QUIZ_LENGTH, summariseAttempt } from '../engine/quiz'
+import { modeFor, playsTown, speak } from '../engine/mode'
+import { buildProfile, milestoneReached, streak, subjectStrength, todayKey, type MasteryLevel } from '../engine/profile'
+import { buildQuiz, roundLength, summariseAttempt } from '../engine/quiz'
 import { attemptXp, levelFor, nextStep, totalXp, XP, type NextStep } from '../engine/xp'
 import { useStore } from '../store/store'
-import type { GradeBand, QuizAttempt, QuizItem } from '../types'
+import type { GradeBand, Prefs, QuizAttempt, QuizItem } from '../types'
 import { IconTile, LevelBadge } from '../components/ui'
 import { Screen } from '../components/Screen'
 import { ContextRail } from '../components/ContextRail'
@@ -59,6 +59,63 @@ function Confetti() {
   )
 }
 
+type Minutes = Prefs['dailyMinutes']
+type Level = Prefs['difficulty']
+const MINUTES: Minutes[] = [5, 10, 15]
+/** Short picture-tile names for grades 1 to 5 (five words or fewer). */
+const PICK_NAME: Record<string, string> = { maths: 'Maths', 'general-science': 'Science', 'social-studies': 'Social Studies', english: 'English' }
+const LEVEL_OPTIONS: { id: Level; label: string }[] = [
+  { id: 'easy', label: 'Easy' },
+  { id: 'normal', label: 'Normal' },
+  { id: 'hard', label: 'Hard' },
+]
+
+/** One-line segmented control: a quiet row of pills, one selected. */
+function Segmented<T extends string | number>({ label, options, value, onChange, hue = 160 }: { label: string; options: { id: T; label: string }[]; value: T; onChange: (v: T) => void; hue?: number }) {
+  return (
+    <div className="segmented-row">
+      <span className="segmented-label" id={`seg-${label.replace(/\s+/g, '-').toLowerCase()}`}>
+        {label}
+      </span>
+      <div className="segmented" role="radiogroup" aria-labelledby={`seg-${label.replace(/\s+/g, '-').toLowerCase()}`} style={tint(hue)}>
+        {options.map((o) => (
+          <button key={String(o.id)} type="button" role="radio" aria-checked={o.id === value} className={o.id === value ? 'on' : ''} onClick={() => onChange(o.id)}>
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function DailyTime() {
+  const { state, setPrefs } = useStore()
+  return <Segmented label="Daily time" options={MINUTES.map((m) => ({ id: m, label: `${m} min` }))} value={state.prefs.dailyMinutes} onChange={(m) => setPrefs({ dailyMinutes: m })} />
+}
+
+/** Junior streak milestone: confetti and a toast with no points. */
+function MilestoneToast({ label }: { label: string }) {
+  const [show, setShow] = useState(true)
+  useEffect(() => {
+    const t = setTimeout(() => setShow(false), 2600)
+    return () => clearTimeout(t)
+  }, [])
+  if (!show) return null
+  return (
+    <div className="celebrate" aria-live="polite">
+      <div className="confetti" aria-hidden="true">
+        {Array.from({ length: 28 }, (_, i) => (
+          <i key={i} style={{ ['--i' as string]: i, ['--h' as string]: (i * 47) % 360 }} />
+        ))}
+      </div>
+      <div className="xp-toast pop">
+        <Flame size={18} aria-hidden="true" />
+        <b>{label}</b>
+      </div>
+    </div>
+  )
+}
+
 export function Practice() {
   const { subjectId } = useParams()
   const { state } = useStore()
@@ -67,13 +124,39 @@ export function Practice() {
   const [band, setBand] = useState<GradeBand>(ownBand)
   const profile = useMemo(() => buildProfile(state), [state])
   const junior = modeFor(state.profile) === 'junior'
+  const town = playsTown(state.profile)
 
-  if (subjectId) return <Quiz key={subjectId} subjectId={subjectId} band={band} />
+  if (subjectId) return <Quiz key={subjectId} subjectId={subjectId} band={town ? '1-5' : band} />
+
+  if (town) {
+    const picks = subjectsWithItems('1-5').sort((a, b) => subjectName(a).localeCompare(subjectName(b)))
+    return (
+      <Screen header={<PageHeader kicker="Practice" title="Pick one" themed hue={160} variant={1} />}>
+        <div className="pick-tiles">
+          {picks.map((id) => {
+            const subj = getSubject(id)
+            const hue = subj ? AREA_META[subj.area].hue : 258
+            const Icon = subjectIcon(id, subj?.area)
+            return (
+              <Link key={id} to={`/practice/${id}`} state={{ band: '1-5' }} className="pick-tile" style={tint(hue)}>
+                <span className="pick-icon" aria-hidden="true">
+                  <Icon size={44} strokeWidth={2.2} />
+                </span>
+                <span className="pick-name">{PICK_NAME[id] ?? subjectName(id)}</span>
+              </Link>
+            )
+          })}
+        </div>
+      </Screen>
+    )
+  }
 
   const subjects = subjectsWithItems(band)
   const goal = state.goals[0] ? getCareer(state.goals[0]) : undefined
   const must = new Set(goal?.subjects.must ?? [])
   const sorted = [...subjects].sort((a, b) => Number(must.has(b)) - Number(must.has(a)) || subjectName(a).localeCompare(subjectName(b)))
+  const len = roundLength(state.prefs.dailyMinutes)
+  const otherBands = BANDS.filter((b) => b !== ownBand)
 
   return (
     <Screen
@@ -81,7 +164,7 @@ export function Practice() {
         <PageHeader
           kicker="Practice"
           title="Pick a subject"
-          lead={junior ? undefined : `${QUIZ_LENGTH} questions a round. Harder when you're winning, kinder when you're not.`}
+          lead={junior ? undefined : `${len} questions, about ${state.prefs.dailyMinutes} minutes, up to ${len * XP.correct + XP.roundBonus} XP`}
           themed
           hue={160}
           variant={1}
@@ -89,14 +172,15 @@ export function Practice() {
       }
       rail={<ContextRail />}
     >
-      <div className="tabs pills" role="tablist" aria-label="Grade band">
-        {BANDS.map((b) => (
-          <button key={b} role="tab" aria-selected={band === b} className={`btn sm ${band === b ? 'active' : ''}`} onClick={() => setBand(b)}>
-            Grades {b}
-            {b === ownBand ? ' (yours)' : ''}
+      {!junior && <DailyTime />}
+      {band !== ownBand && (
+        <div className="band-now row">
+          <span className="small muted">Showing grades {band}</span>
+          <button className="btn sm quiet" onClick={() => setBand(ownBand)}>
+            Back to my grade
           </button>
-        ))}
-      </div>
+        </div>
+      )}
       <div className={`grid cols-3 course-grid ${junior ? 'junior-courses' : ''}`}>
         {sorted.map((id) => {
           const s = profile.subjects[id]
@@ -120,29 +204,33 @@ export function Practice() {
                   </span>
                 )}
               </div>
-              {!junior && (
-                <span className="course-xp" aria-label="Up to 80 XP">
-                  +80 XP
-                </span>
-              )}
             </Link>
           )
         })}
       </div>
       {!subjects.length && <p className="muted">No practice sets for grades {band} yet.</p>}
-      <p className="small muted practice-note">
-        Grades on this track: {BOARD_GRADES[p.boardId][0]}-{BOARD_GRADES[p.boardId].at(-1)}. You can practise any band, but only your own band counts toward goal readiness.
-      </p>
+      {junior && <DailyTime />}
+      <details className="other-grades">
+        <summary>Other grades</summary>
+        <div className="row other-grades-list">
+          {otherBands.map((b) => (
+            <button key={b} className={`btn sm ${band === b ? 'active' : ''}`} aria-pressed={band === b} onClick={() => setBand(b)}>
+              Grades {b}
+            </button>
+          ))}
+        </div>
+      </details>
     </Screen>
   )
 }
 
 function Quiz({ subjectId, band: initialBand }: { subjectId: string; band: GradeBand }) {
-  const { state, addAttempt } = useStore()
+  const { state, addAttempt, setPrefs } = useStore()
   const nav = useNavigate()
   const loc = useLocation()
   const p = state.profile!
   const junior = modeFor(state.profile) === 'junior'
+  const town = playsTown(state.profile)
   const navBand = (loc.state as { band?: GradeBand } | null)?.band
   const band = useMemo<GradeBand>(() => {
     // Prefer the band passed from the practice list, else the student's own band.
@@ -150,7 +238,10 @@ function Quiz({ subjectId, band: initialBand }: { subjectId: string; band: Grade
   }, [navBand, initialBand, p.boardId, p.grade])
 
   const lesson = lessonFor(subjectId, band)
-  const [items] = useState<QuizItem[]>(() => buildQuiz(subjectId, band, state.attempts))
+  const [seed] = useState(() => Date.now())
+  const [length] = useState(() => roundLength(state.prefs.dailyMinutes))
+  const difficulty: Prefs['difficulty'] = town ? 'easy' : state.prefs.difficulty
+  const [items, setItems] = useState<QuizItem[]>(() => buildQuiz(subjectId, band, state.attempts, seed, { length, difficulty }))
   const [inLesson, setInLesson] = useState(() => lesson !== undefined)
   const [noVoice, setNoVoice] = useState(false)
   const [index, setIndex] = useState(0)
@@ -159,6 +250,14 @@ function Quiz({ subjectId, band: initialBand }: { subjectId: string; band: Grade
   const [result, setResult] = useState<QuizAttempt | null>(null)
   const start = useRef(0)
   const saved = useRef(false)
+  const [milestone, setMilestone] = useState<number | null>(null)
+  const chooseDifficulty = (d: Prefs['difficulty']) => {
+    if (d === difficulty) return
+    setPrefs({ difficulty: d })
+    setItems(buildQuiz(subjectId, band, state.attempts, seed, { length, difficulty: d }))
+    setAnswers({})
+  }
+  const difficultyControl = town ? null : <Segmented label="Difficulty" options={LEVEL_OPTIONS} value={difficulty} onChange={chooseDifficulty} />
 
   useEffect(() => {
     start.current = Date.now()
@@ -291,7 +390,7 @@ function Quiz({ subjectId, band: initialBand }: { subjectId: string; band: Grade
       return (
         <Screen header={header}>
           <div className="junior-result">
-            <Confetti />
+            {milestone ? <MilestoneToast label={`${milestone} days in a row!`} /> : <Confetti />}
             {topicsMissed.length > 0 && (
               <div className="card pastel section" style={tint(160)}>
                 <h4 style={{ marginTop: 0 }}>Topics to look at again</h4>
@@ -318,7 +417,7 @@ function Quiz({ subjectId, band: initialBand }: { subjectId: string; band: Grade
 
     return (
       <Screen header={header}>
-        <Celebrate xp={xp} label={`${correct}/${total} in ${subject}`} />
+        <Celebrate xp={xp} label={milestone ? `${milestone}-day streak!` : `${correct}/${total} in ${subject}`} />
         <div className="result-grid section">
           <div className="card accent earned-row">
             <Ring value={level.progress} size={48} stroke={5}>
@@ -399,6 +498,7 @@ function Quiz({ subjectId, band: initialBand }: { subjectId: string; band: Grade
             <h4>A worked example</h4>
             <p className={lessonUrdu ? 'urdu' : ''}>{lesson.example}</p>
           </div>
+          {difficultyControl}
           <div className="lesson-actions">
             <button className="btn primary" onClick={startQuestions}>
               Try the questions <ArrowRight size={18} aria-hidden="true" />
@@ -430,8 +530,13 @@ function Quiz({ subjectId, band: initialBand }: { subjectId: string; band: Grade
   const next = () => {
     setRevealed(false)
     setNoVoice(false)
-    if (index + 1 >= items.length) setResult(summariseAttempt(subjectId, band, items, answers, Math.round((Date.now() - start.current) / 1000)))
-    else setIndex(index + 1)
+    if (index + 1 >= items.length) {
+      // Streak before this round (as stored) and after it (today added).
+      const before = streak(state.activeDays).current
+      const after = streak([...state.activeDays, todayKey()]).current
+      setMilestone(after > before ? milestoneReached(before, after) : null)
+      setResult(summariseAttempt(subjectId, band, items, answers, Math.round((Date.now() - start.current) / 1000)))
+    } else setIndex(index + 1)
   }
   const isRight = chosen === item.answer
 
@@ -456,6 +561,7 @@ function Quiz({ subjectId, band: initialBand }: { subjectId: string; band: Grade
           <span key={it.id} className={i < index || (i === index && revealed) ? 'done' : ''} />
         ))}
       </div>
+      {!lesson && index === 0 && !revealed && difficultyControl && <div className="quiz-difficulty">{difficultyControl}</div>}
       <div className="card quiz-card">
         <div className="row" style={{ gap: 8 }}>
           <span className="badge primary">{item.topic}</span>

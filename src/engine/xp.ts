@@ -1,9 +1,13 @@
+import { roundLength } from './quiz'
 import { getCareer } from '../data/careers'
 import { subjectsWithItems } from '../data/quizzes'
-import { subjectName } from '../data/subjects'
+import { getSubject, subjectName } from '../data/subjects'
 import { bandForGrade } from '../data/boards'
+import { PICTURE_PREFIX } from '../data/pictureFinder'
+import { AREA_META } from '../design'
 import type { QuizAttempt, StudentState } from '../types'
-import { streak, subjectStrength } from './profile'
+import { scoreFinder, scorePictureFinder } from './finder'
+import { buildProfile, streak, subjectStrength } from './profile'
 
 /** Experience points earned for each kind of action. */
 export const XP = {
@@ -167,6 +171,8 @@ export interface NextStep {
 /** The one thing the student should do right now. */
 export function nextStep(state: StudentState): NextStep {
   const p = state.profile
+  const qs = roundLength(state.prefs?.dailyMinutes ?? 10)
+  const mins = state.prefs?.dailyMinutes ?? 10
   const band = p ? bandForGrade(p.boardId, p.grade) : '6-8'
   const practisable = subjectsWithItems(band)
   const goal = state.goals[0] ? getCareer(state.goals[0]) : undefined
@@ -185,7 +191,7 @@ export function nextStep(state: StudentState): NextStep {
     const pick = ranked[0]
     if (pick) {
       const why = pick.st.items === 0 ? 'You have not tried it here yet.' : pick.st.level === 'needs-work' ? `It is at ${pick.st.accuracy}%. Let us lift it.` : pick.st.level === 'developing' ? `${pick.st.accuracy}% and climbing. Keep going.` : `Keep it sharp for ${goal.title.split(' (')[0]}.`
-      return { kind: 'practice', title: `Practise ${pretty(pick.s)}`, detail: `8 questions, about 6 minutes. ${why}`, cta: 'Start round', to: `/practice/${pick.s}`, xp: 40 + 40, minutes: 6, subjectId: pick.s }
+      return { kind: 'practice', title: `Practise ${pretty(pick.s)}`, detail: `${qs} questions, about ${mins} minutes. ${why}`, cta: 'Start round', to: `/practice/${pick.s}`, xp: 40 + 40, minutes: mins, subjectId: pick.s }
     }
   }
   if (!state.discovery) {
@@ -196,5 +202,131 @@ export function nextStep(state: StudentState): NextStep {
   }
   const weakest = [...new Set(state.attempts.map((a) => a.subjectId))].map((s) => subjectStrength(s, state.attempts)).sort((a, b) => a.recentAccuracy - b.recentAccuracy)[0]
   const s = weakest?.subjectId ?? practisable[0] ?? 'maths'
-  return { kind: 'practice', title: `Practise ${pretty(s)}`, detail: '8 questions, about 6 minutes.', cta: 'Start round', to: `/practice/${s}`, xp: 80, minutes: 6, subjectId: s }
+  return { kind: 'practice', title: `Practise ${pretty(s)}`, detail: `${qs} questions, about ${mins} minutes.`, cta: 'Start round', to: `/practice/${s}`, xp: 80, minutes: mins, subjectId: s }
+}
+
+// ---------------------------------------------------------------- Home state
+
+export type HomeStateKind = 'new' | 'pick-goal' | 'preview' | 'first-round' | 'resume' | 'done-today' | 'streak-risk'
+export type HomeIcon = 'compass' | 'target' | 'eye' | 'play' | 'check' | 'flame'
+
+export interface HomeCard {
+  state: HomeStateKind
+  title: string
+  line: string
+  cta: string
+  to: string
+  hue: number
+  icon: HomeIcon
+  meta?: {
+    subject?: string
+    rounds?: number
+    accuracy?: number
+    streak?: number
+    /** The last round's score, for "6 of 8". */
+    correct?: number
+    total?: number
+    /** Questions in the next round, from prefs. */
+    questions?: number
+    /** Career id for the finder and preview states. */
+    careerId?: string
+  }
+}
+
+function subjectHue(id: string): number {
+  const s = getSubject(id)
+  if (!s) return 258
+  return AREA_META[s.area].hue
+}
+
+function questionsFor(state: StudentState): number {
+  const m = state.prefs?.dailyMinutes ?? 10
+  return m === 5 ? 4 : m === 15 ? 12 : 8
+}
+
+/** The goal's weakest must subject that has items; same ranking as nextStep. */
+function weakestGoalSubject(state: StudentState): string | undefined {
+  const p = state.profile
+  const band = p ? bandForGrade(p.boardId, p.grade) : '6-8'
+  const practisable = subjectsWithItems(band)
+  const goal = state.goals[0] ? getCareer(state.goals[0]) : undefined
+  if (!goal) return practisable[0]
+  const ranked = goal.subjects.must
+    .filter((s) => practisable.includes(s))
+    .map((s) => ({ s, st: subjectStrength(s, state.attempts) }))
+    .sort((a, b) => (a.st.items === 0 ? -1 : b.st.items === 0 ? 1 : a.st.recentAccuracy - b.st.recentAccuracy))
+  return ranked[0]?.s ?? practisable[0]
+}
+
+/**
+ * The one card at the top of Today, chosen by state (screensdesign's state
+ * router). Copy here is the senior copy; junior screens re-word it from the
+ * state and meta. `now` comes from the caller so render stays pure.
+ */
+export function homeState(state: StudentState, now: { hour: number; today: string }): HomeCard {
+  const goal = state.goals[0] ? getCareer(state.goals[0]) : undefined
+  const questions = questionsFor(state)
+
+  if (!state.goals.length && !state.finder) {
+    return { state: 'new', title: 'Find a direction', line: 'Eight quick questions. Three futures worth a look.', cta: 'Play the finder', to: '/finder', hue: 320, icon: 'compass' }
+  }
+  if (!goal) {
+    const answers = state.finder ?? {}
+    const profile = buildProfile(state)
+    const picture = Object.values(answers).some((v) => typeof v === 'string' && v.startsWith(PICTURE_PREFIX))
+    const top = (picture ? scorePictureFinder(answers, state, profile) : scoreFinder(answers, state, profile)).careers[0]?.career
+    const name = top ? top.title.split(' (')[0] : 'a career'
+    return { state: 'pick-goal', title: `Your top match: ${name}`, line: 'Look at it closely, then set it as your goal.', cta: 'See my matches', to: '/finder', hue: 258, icon: 'target', meta: { careerId: top?.id } }
+  }
+  const goalName = goal.title.split(' (')[0]
+  if (!state.previewed.includes(goal.id)) {
+    return { state: 'preview', title: `See your future as a ${goalName.toLowerCase()}`, line: 'Your age at every step, from today to ten years in.', cta: 'Peer into your future', to: `/careers/${goal.id}?preview=1`, hue: 215, icon: 'eye', meta: { careerId: goal.id } }
+  }
+  if (!state.attempts.length) {
+    const s = weakestGoalSubject(state) ?? 'maths'
+    return {
+      state: 'first-round',
+      title: pretty(s),
+      line: `Round 1 · ${questions} questions, about ${state.prefs?.dailyMinutes ?? 10} minutes`,
+      cta: 'Start round',
+      to: `/practice/${s}`,
+      hue: subjectHue(s),
+      icon: 'play',
+      meta: { subject: s, rounds: 0, questions },
+    }
+  }
+
+  const last = [...state.attempts].sort((a, b) => a.date.localeCompare(b.date))[state.attempts.length - 1]
+  const s = last.subjectId
+  const st = subjectStrength(s, state.attempts)
+  const run = streak(state.activeDays).current
+  const activeToday = state.activeDays.includes(now.today)
+  const roundToday = state.attempts.some((a) => a.date.slice(0, 10) === now.today)
+
+  if (activeToday && roundToday) {
+    const extra = nextStep(state)
+    return {
+      state: 'done-today',
+      title: "You're done for today",
+      line: run >= 2 ? `${run} days in a row` : 'Your streak starts today',
+      cta: extra.title,
+      to: extra.to,
+      hue: 150,
+      icon: 'check',
+      meta: { streak: run, subject: extra.subjectId },
+    }
+  }
+  if (now.hour >= 17 && !activeToday && run >= 2) {
+    return { state: 'streak-risk', title: 'Keep your streak', line: `5 minutes keeps ${run} days alive`, cta: 'Next round', to: `/practice/${s}`, hue: 28, icon: 'flame', meta: { subject: s, streak: run, rounds: st.attempts } }
+  }
+  return {
+    state: 'resume',
+    title: pretty(s),
+    line: `Round ${st.attempts + 1} · last round ${last.correct} of ${last.total}`,
+    cta: 'Next round',
+    to: `/practice/${s}`,
+    hue: subjectHue(s),
+    icon: 'play',
+    meta: { subject: s, rounds: st.attempts, accuracy: st.recentAccuracy, correct: last.correct, total: last.total, questions },
+  }
 }

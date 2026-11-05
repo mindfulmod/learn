@@ -1,0 +1,289 @@
+/* =========================================================================
+   Rahnuma Town (grades 1 to 5): map, Visit, Try it round, sticker book.
+   Type: 32 title, 24 question, 20 line, 18 labels. Targets: 80px places,
+   64px options. See docs/DESIGN.md, iteration 5.
+   ========================================================================= */
+
+/* ---------- Say: tap to hear ------------------------------------------ */
+.say {
+  position: relative; cursor: pointer; border-radius: 8px; outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.say:hover { background: hsl(var(--h) 80% 60% / 0.08); }
+.say:focus-visible { box-shadow: 0 0 0 3px var(--brand-glow); }
+.say:active { background: hsl(var(--h) 80% 60% / 0.16); }
+.say-glyph {
+  position: absolute; top: -6px; right: -16px; color: var(--muted);
+  opacity: 0; transition: opacity 0.15s; pointer-events: none;
+}
+.say:hover .say-glyph, .say:focus-visible .say-glyph { opacity: 1; }
+@media (hover: none) { .say:hover { background: none; } .say:hover .say-glyph { opacity: 0; } }
+
+/* ---------- Page and header ------------------------------------------- */
+.town-page { display: flex; flex-direction: column; gap: 12px; }
+.town-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; }
+.town-hello { margin: 0; font-size: 32px; line-height: 1.2; letter-spacing: -0.02em; min-width: 0; overflow-wrap: anywhere; }
+.town-week { display: inline-flex; gap: 6px; padding: 2px; }
+.town-sun {
+  width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center;
+  color: var(--border-strong);
+}
+.town-sun.on { color: hsl(38 95% 45%); background: hsl(48 100% 88%); }
+.town-sun.on svg { fill: hsl(45 95% 60%); }
+.town-sun.today:not(.on) { box-shadow: inset 0 0 0 3px hsl(45 90% 55%); color: hsl(40 70% 55%); }
+@media (max-width: 420px) {
+  .town-week { gap: 2px; }
+  .town-sun { width: 38px; height: 38px; }
+  .town-sun svg { width: 26px; height: 26px; }
+}
+
+/* ---------- Map ---------------------------------------------------------- */
+.town-wrap { width: 100%; min-width: 0; }
+.town-map {
+  --ground: hsl(105 45% 87%);
+  --hill: hsl(118 38% 78%);
+  --hill-far: hsl(128 34% 83%);
+  --road: hsl(35 32% 77%);
+  --road-line: #fff;
+  --square: hsl(40 48% 86%);
+  --pond: hsl(200 70% 78%);
+  --tree: hsl(140 45% 52%);
+  --trunk: hsl(25 40% 40%);
+  --tile: 64px;
+  position: relative; margin: 0 auto; container-type: inline-size;
+}
+.town-map.wide { aspect-ratio: 1000 / 620; width: min(100%, calc(70vh * 1000 / 620)); }
+.town-map.tall { --tile: 56px; aspect-ratio: 620 / 940; width: min(100%, max(300px, calc((100dvh - 260px) * 620 / 940))); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .town-map {
+    --ground: hsl(150 22% 16%); --hill: hsl(150 22% 21%); --hill-far: hsl(155 18% 19%);
+    --road: hsl(250 12% 30%); --road-line: hsl(250 10% 52%); --square: hsl(250 15% 24%);
+    --pond: hsl(205 45% 36%); --tree: hsl(145 35% 36%); --trunk: hsl(25 25% 30%);
+  }
+}
+:root[data-theme='dark'] .town-map {
+  --ground: hsl(150 22% 16%); --hill: hsl(150 22% 21%); --hill-far: hsl(155 18% 19%);
+  --road: hsl(250 12% 30%); --road-line: hsl(250 10% 52%); --square: hsl(250 15% 24%);
+  --pond: hsl(205 45% 36%); --tree: hsl(145 35% 36%); --trunk: hsl(25 25% 30%);
+}
+
+.town-svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; border-radius: var(--r-xl); overflow: hidden; }
+.town-ground { fill: var(--ground); }
+.town-hill { fill: var(--hill); }
+.town-hill.far { fill: var(--hill-far); }
+.town-road { fill: none; stroke: var(--road); stroke-linecap: round; stroke-linejoin: round; }
+.town-road-line { fill: none; stroke: var(--road-line); stroke-width: 3; stroke-dasharray: 14 14; stroke-linecap: round; opacity: 0.8; }
+.town-square { fill: var(--square); }
+.town-pond { fill: var(--pond); }
+.town-tree { fill: var(--tree); }
+.town-trunk { fill: var(--trunk); }
+
+.town-layer { position: absolute; inset: 0; }
+
+/* A place: the tile sits on the point, the label below it. */
+.town-place {
+  position: absolute; z-index: 1; width: 104px; min-height: 88px; padding: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  transform: translate(-50%, calc(var(--tile) / -2));
+  border: 0; background: none; font: inherit; color: inherit; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.town-place:focus-visible { outline: none; }
+.town-tile {
+  position: relative; width: var(--tile); height: var(--tile); border-radius: 20px;
+  display: grid; place-items: center; background: #fff; color: hsl(var(--h) 65% 40%);
+  border: 3px solid hsl(var(--h) 60% 45%);
+  box-shadow: 0 10px 20px -10px hsl(var(--h) 60% 30% / 0.55);
+  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1.3), box-shadow 0.18s;
+}
+.town-map.tall .town-tile { border-radius: 18px; }
+.town-map.tall .town-tile svg { width: 26px; height: 26px; }
+.town-place:hover .town-tile { transform: translateY(-4px) scale(1.04); }
+.town-place:active .town-tile { transform: scale(0.96); }
+.town-place:focus-visible .town-tile { box-shadow: 0 0 0 4px var(--surface), 0 0 0 8px hsl(var(--h) 80% 50%); }
+.town-label {
+  max-width: 104px; padding: 2px 10px; border-radius: 999px; white-space: nowrap;
+  font-size: 18px; font-weight: 800; line-height: 1.35; color: hsl(var(--h) 60% 32%);
+  background: var(--surface); box-shadow: var(--shadow-sm);
+}
+.town-map.tall .town-label { font-size: 16px; padding: 1px 8px; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme='light']) .town-label { color: hsl(var(--h) 80% 80%); } }
+:root[data-theme='dark'] .town-label { color: hsl(var(--h) 80% 80%); }
+
+/* Finder match: glow ring and a star. */
+.town-place.top .town-tile {
+  box-shadow: 0 0 0 4px var(--surface), 0 0 0 9px hsl(var(--h) 85% 58% / 0.6), 0 0 28px 10px hsl(var(--h) 90% 60% / 0.45);
+  animation: town-glow 2.4s ease-in-out infinite;
+}
+.town-star {
+  position: absolute; top: -12px; left: -12px; width: 28px; height: 28px; border-radius: 50%;
+  display: grid; place-items: center; background: hsl(45 95% 55%); color: #fff;
+  border: 3px solid var(--surface); box-shadow: var(--shadow-sm);
+}
+.town-map.tall .town-star svg { width: 14px; height: 14px; }
+/* Sticker earned: a round badge pinned top right. */
+.town-badge {
+  position: absolute; top: -12px; right: -12px; width: 30px; height: 30px; border-radius: 50%;
+  display: grid; place-items: center; background: hsl(var(--h) 65% 45%); color: #fff;
+  border: 3px solid var(--surface); box-shadow: var(--shadow-sm);
+}
+.town-map.tall .town-badge svg { width: 16px; height: 16px; }
+@keyframes town-glow {
+  0%, 100% { box-shadow: 0 0 0 4px var(--surface), 0 0 0 9px hsl(var(--h) 85% 58% / 0.6), 0 0 28px 10px hsl(var(--h) 90% 60% / 0.45); }
+  50% { box-shadow: 0 0 0 4px var(--surface), 0 0 0 12px hsl(var(--h) 85% 58% / 0.35), 0 0 36px 14px hsl(var(--h) 90% 60% / 0.3); }
+}
+
+/* Signpost in the town square, before the finder is played. */
+.town-sign {
+  position: absolute; z-index: 2; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: clamp(220px, 34cqw, 330px); padding: clamp(10px, 1.6cqw, 18px);
+  display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center;
+  background: var(--surface); border: 4px solid hsl(30 50% 55%); border-radius: 22px; box-shadow: var(--shadow-lg);
+}
+.town-sign::after {
+  content: ''; position: absolute; top: 100%; left: 50%; width: 12px; height: 18px; margin-left: -6px;
+  background: hsl(30 45% 45%); border-radius: 0 0 4px 4px;
+}
+.town-sign-text { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: clamp(16px, 2.3cqw, 24px); line-height: 1.25; }
+.town-sign-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.town-sign-play { min-height: clamp(52px, 5.6cqw, 64px); padding: 8px 26px; font-size: 18px; }
+.town-sign-speak { width: clamp(52px, 5.6cqw, 64px); min-height: clamp(52px, 5.6cqw, 64px); padding: 0; border-radius: 50%; }
+.town-map.tall .town-sign { width: 33cqw; min-width: 104px; padding: 10px 6px; gap: 6px; border-width: 3px; border-radius: 18px; }
+.town-map.tall .town-sign-text { font-size: 16px; }
+.town-map.tall .town-sign-play { padding: 6px 12px; min-height: 48px; font-size: 17px; gap: 6px; }
+.town-map.tall .town-sign-play svg { width: 18px; height: 18px; }
+.town-map.tall .town-sign-speak { width: 44px; min-height: 44px; }
+
+/* ---------- Visit: drawer on desktop, bottom sheet on phones ------------ */
+.visit-backdrop {
+  position: fixed; inset: 0; z-index: 90; display: flex; align-items: flex-end; justify-content: center;
+  background: rgb(10 8 24 / 0.4); animation: visit-fade 0.2s ease both;
+}
+.visit-panel {
+  position: relative; width: 100%; max-width: 640px; max-height: 94dvh;
+  display: flex; flex-direction: column; overflow: hidden;
+  border-radius: 28px 28px 0 0; background: var(--surface); color: var(--text);
+  box-shadow: var(--shadow-lg); animation: visit-sheet 0.35s cubic-bezier(0.2, 0.9, 0.25, 1) both;
+}
+.visit-body {
+  flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain;
+  display: flex; flex-direction: column; align-items: stretch; gap: 14px;
+  padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
+}
+@media (min-width: 1024px) {
+  .visit-backdrop { align-items: stretch; justify-content: flex-end; background: rgb(10 8 24 / 0.28); }
+  .visit-panel {
+    width: 520px; max-width: 520px; height: 100dvh; max-height: 100dvh;
+    border-radius: 28px 0 0 28px; animation: visit-drawer 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .visit-body { padding: 28px 28px 28px; gap: 16px; }
+}
+.visit-close {
+  position: absolute; z-index: 3; top: 12px; right: 12px; width: 52px; height: 52px; border-radius: 50%;
+  display: grid; place-items: center; border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  cursor: pointer; box-shadow: var(--shadow-md); transition: transform 0.18s;
+}
+.visit-close:hover { transform: rotate(90deg); }
+.visit-close:focus-visible { outline: none; box-shadow: 0 0 0 4px var(--brand-glow); }
+
+.visit-scene { position: relative; display: flex; justify-content: center; }
+.visit-scene .scene { width: 100%; max-width: min(460px, calc(42dvh * 4 / 3)); margin: 0 auto; border-radius: 24px; }
+.visit-has {
+  position: absolute; left: 10px; top: 10px; width: 40px; height: 40px; border-radius: 50%;
+  display: grid; place-items: center; background: hsl(var(--h) 65% 45%); color: #fff; border: 3px solid #fff;
+}
+.visit-title { margin: 4px 0 0; text-align: center; font-size: 32px; line-height: 1.2; color: var(--tint-strong); }
+.visit-line { margin: 0; text-align: center; font-size: 20px; line-height: 1.4; font-weight: 600; }
+
+.town-actions { display: flex; flex-direction: column; gap: 12px; width: 100%; margin-top: 6px; }
+.btn.town-big { width: 100%; min-height: 64px; font-size: 18px; border-radius: 20px; }
+.btn.town-big.quiet { background: transparent; border: 2px solid var(--border); color: var(--text-2); }
+.btn.town-big.quiet:hover { background: var(--surface-2); color: var(--text); }
+
+@keyframes visit-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes visit-sheet { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes visit-drawer { from { transform: translateX(48px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* ---------- Try it round --------------------------------------------- */
+.try { display: flex; flex-direction: column; gap: 16px; padding-top: 4px; }
+.try-top { display: flex; align-items: center; gap: 12px; min-height: 52px; padding-right: 60px; }
+.try-kicker { font-size: 18px; font-weight: 800; color: var(--tint-strong); }
+.try-progress { display: inline-flex; gap: 6px; margin-left: auto; }
+.try-progress span { width: 14px; height: 14px; border-radius: 50%; background: var(--border-strong); }
+.try-progress span.done { background: var(--tint); }
+.try-progress span.now { background: var(--tint-strong); box-shadow: 0 0 0 3px var(--tint-glow); }
+.try-question { margin: 0; font-size: 24px; line-height: 1.35; overflow-wrap: anywhere; }
+.try-options { display: flex; flex-direction: column; gap: 10px; }
+.try-option {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 64px;
+  padding: 12px 18px; border-radius: var(--r-md); border: 3px solid var(--border); background: var(--surface);
+  color: var(--text); font: inherit; font-size: 20px; font-weight: 700; text-align: left; cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, transform 0.12s, opacity 0.2s;
+}
+.try-options:not(.locked) .try-option:hover { border-color: var(--tint); background: var(--tint-soft); }
+.try-options:not(.locked) .try-option:active { transform: scale(0.99); }
+.try-option:focus-visible { outline: none; border-color: var(--tint); box-shadow: 0 0 0 4px var(--tint-glow); }
+.try-option:disabled { cursor: default; }
+.try-option-text { min-width: 0; overflow-wrap: anywhere; }
+.try-option.right { border-color: var(--good); background: var(--good-soft); color: var(--text); }
+.try-option.right .try-mark { color: var(--good); }
+.try-option.wrong { border-color: var(--bad); background: var(--bad-soft); }
+.try-option.wrong .try-mark { color: var(--bad); }
+.try-option.faded { opacity: 0.45; }
+.try-mark { flex-shrink: 0; }
+.try-option.right .try-mark { animation: try-pop 0.32s cubic-bezier(0.2, 0.8, 0.2, 1.5) both; }
+.try-why { display: flex; flex-direction: column; gap: 12px; padding: 14px 16px; border-radius: var(--r-md); background: var(--surface-2); }
+.try-why p { margin: 0; font-size: 18px; line-height: 1.45; }
+
+.try-end { align-items: center; text-align: center; padding-top: 24px; }
+.try-sticker {
+  width: 120px; height: 120px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--surface-2); color: var(--muted); border: 3px dashed var(--border-strong);
+}
+.try-sticker.earned {
+  background: var(--tint-gradient); color: #fff; border: 5px solid var(--surface);
+  box-shadow: 0 0 0 4px var(--tint), 0 18px 36px -12px var(--tint-glow);
+  animation: try-pop 0.5s cubic-bezier(0.2, 0.8, 0.2, 1.4) both;
+}
+.try-end-title { margin: 0; font-size: 32px; line-height: 1.2; }
+.try-end-line { margin: 0; display: flex; justify-content: center; }
+.try-end-line > .say { display: inline-flex; gap: 8px; padding: 4px; }
+.try-dot { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--border); color: #fff; }
+.try-dot.on { background: var(--good); }
+.try-end .town-actions { max-width: 420px; }
+@keyframes try-pop { from { transform: scale(0.4); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* ---------- Sticker book --------------------------------------------- */
+.stickers { display: flex; flex-direction: column; align-items: center; gap: 8px; max-width: 640px; margin: 0 auto; text-align: center; }
+.stickers-title { margin: 8px 0 0; font-size: 32px; line-height: 1.2; }
+.stickers-count { margin: 0 0 12px; font-size: 20px; font-weight: 700; color: var(--text-2); }
+.stickers-grid { list-style: none; margin: 0; padding: 0; width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(10px, 3vw, 18px); }
+.stickers-grid li { min-width: 0; }
+.sticker-slot {
+  width: 100%; aspect-ratio: 1; min-height: 80px; padding: 8px; border-radius: 24px; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  font: inherit; color: var(--muted); background: transparent; border: 3px dashed var(--border-strong);
+  transition: transform 0.15s, box-shadow 0.18s;
+}
+.sticker-slot:focus-visible { outline: none; box-shadow: 0 0 0 4px var(--brand-glow); }
+.sticker-disc {
+  width: 54%; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center;
+  border: 3px dashed var(--border-strong);
+}
+.sticker-word { font-size: clamp(14px, 4.2vw, 18px); font-weight: 800; line-height: 1.2; max-width: 100%; overflow-wrap: anywhere; }
+.sticker-slot.earned { background: var(--tint-soft); border: 3px solid var(--tint); color: var(--tint-strong); }
+.sticker-slot.earned:hover { transform: translateY(-3px); box-shadow: 0 14px 28px -12px var(--tint-glow); }
+.sticker-slot.earned .sticker-disc { border: 4px solid var(--surface); background: var(--tint-gradient); color: #fff; box-shadow: 0 8px 18px -8px var(--tint-glow); }
+.sticker-slot.earned .sticker-disc svg { width: 52%; height: 52%; }
+.stickers-again {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 48px; margin-top: 16px; padding: 0 12px;
+  color: var(--muted); font-weight: 700; text-decoration: underline; text-underline-offset: 3px;
+}
+.stickers-again:hover { color: var(--brand-strong); }
+
+/* ---------- Motion --------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .town-place.top .town-tile, .visit-backdrop, .visit-panel, .try-sticker.earned, .try-option.right .try-mark { animation: none !important; }
+  .town-tile, .say-glyph, .try-option, .sticker-slot, .visit-close { transition: none !important; }
+  .town-place:hover .town-tile, .sticker-slot.earned:hover, .visit-close:hover { transform: none; }
+}
