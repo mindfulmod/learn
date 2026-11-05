@@ -1,6 +1,55 @@
 # Research synthesis: keeping students engaged
 
-Compiled from a sweep of about 200 links across 27 searches on 5 November 2026. Only sources that contributed a usable finding are listed. Page fetches are blocked in this environment, so findings come from search extracts and indexed abstracts; where a figure is vendor-reported or unverified it is marked.
+Compiled from a sweep of about 200 links across 27 searches on 5 November 2026, then a second pass the same day in which the twenty most load-bearing sources were read in full (see "Read in full" below). Only sources that contributed a usable finding are listed. Where a figure is vendor-reported or unverified it is marked.
+
+## Read in full: what the primary texts add
+
+The first pass worked from search extracts. Reading the full texts changed several conclusions and sharpened others. Each item names the source number from the list at the end.
+
+**Age bands are narrower than junior and senior.** NN/g tested 125 children over three studies and found that children react badly to content even one school grade above or below their own; a 6-year-old called a site "for babies, maybe 4 or 5". At minimum designs must separate 3 to 5, 6 to 8 and 9 to 12, and teens are a fourth group who treat the word "kids" as a repellent. [74][25] Our two-mode split (grades 1 to 8 junior, 9 to 12 senior) is too coarse. Rahnuma now uses four bands: grades 1 to 2, 3 to 5, 6 to 8, 9 to 12.
+
+**Young children do not scroll, do not read, and are confused by redundant navigation.** NN/g's comparison table: youngest children read "not at all", young children "tentatively", older children scan; young children avoid scrolling; multiple or redundant navigation is "very confusing" for children where it is only "slightly confusing" for adults; children "mine-sweep" the screen trying every option; real-life metaphors and spatial navigation are "very helpful for pre-readers" though clunky for adults; animation and sound are liked by children and disliked by adults. Font 14 point for young children. Readability must match each user's grade level. [74] Consequence: the grade 1 to 5 home cannot be a dashboard with a hero, chips, three cards and a rail of three more steps. It must be one spatial screen with one job, and the rail must not repeat the hero.
+
+**Instructions must state the goal and the method, visually, and feedback must be exaggerated.** Children under 6 missed subtle facial and sound feedback; "Yum, I like carrots" works where a raised eyebrow does not. Kids skip long paragraphs of instructions (observed in 2010 on US Mint Kids and again in 2018 on Roblox). Interfaces should use existing mental models (coloring book, kitchen) and prevent errors rather than explain them. Instructions should not name a device ("use the mouse"). [75]
+
+**Motor skills set the interaction vocabulary.** Under 9: tapping, swiping and simple dragging on touchscreens; on a laptop, clicks and simple keys only, no drag, no fine scrolling, no small targets. Touch targets at least 2 cm by 2 cm for young children, four times the adult size. Offer tap-the-destination as well as drag. Recommend similar content instead of sending the child back to the home screen. [26]
+
+**Teens read less and quit faster than designers assume.** Teens perform worse than adults because of reading skill, weaker research strategy and much lower patience. Write at a 6th-grade level, in small chunks with white space; teens dislike tiny type as much as seniors do; they detest clutter and pointless multimedia but like doing things (quizzes, voting, creating). Professional and polished beats childish; separate "Kids" and "Teens". Offer a copy-link share. Design for touch and phones. [25]
+
+**Self-determination theory, from the NN/g treatment.** Autonomy: let users pick order, pace and mastery level (Duolingo and Mimo are the examples). Competence: favour pull over push help; show a tip when the user first opens a feature, not a tutorial up front; if orientation makes no difference in testing, fix the design instead. Relatedness: a well-timed relevant message beats frequent generic ones. Wizards trade autonomy for competence, so test which the audience wants. [76]
+
+**The game-based learning meta-analysis, in detail.** Clark, Tanner-Smith and Killingsworth (69 studies, K-16): games beat non-game instruction by g = 0.33; augmented designs beat standard games by 0.34. Moderators that matter for us: simple gamification (points and badges on school-like tasks) averaged 0.53 against 0.25 for sophisticated mechanics, not a significant difference but a clear sign that polish is not the lever; scaffolding that shows the answer after an error, or adapts, beats success/failure-only feedback, and the gap to teacher-level scaffolding is significant (b = 0.33); schematic visuals beat realistic ones (b = 0.45, p = .03); low anthropomorphism beat medium; an aggregate "contextualisation" score (rich narrative plus visual complexity) had a small negative relationship with learning, matching Wouters et al. 2013. The authors' interpretation: rich narrative and visuals can distract from the assessed content, so keep graphics and story aligned with the learning. [5][77] Consequence: flat, schematic illustration and a thin story; a mascot that reacts, not a cast; wrong answers always show the right answer plus one line of why.
+
+**Difficulty choice.** Smeddinck et al. ran two studies and found the mode of difficulty adjustment (menu, embedded, automatic) changed only perceived autonomy; players said they prefer manual choice; a simple difficulty menu is "a reasonable choice". [8] Consequence: keep adaptive difficulty inside a round, and add a plain Easy / Normal / Hard choice before it.
+
+**Duolingo's path, streak and tab lessons, from their own posts.** The 2022 home redesign replaced a tree of skills with one path to follow step by step, interleaving new and review lessons so that "practice is also forward progress", with descriptive unit names ("get directions", not "City 3"), a floating button to jump back to the current spot, and characters cheering along the path. [32] Streaks: milestone animations lifted day-7 retention of new learners by 1.7%; letting learners hold two streak freezes raised daily actives by 0.38% rather than encouraging days off; a 7-day streak makes course completion 3.6 times more likely; early streaks motivate through momentum, long ones through loss aversion. [78] In February 2026 Duolingo refreshed its core tabs because they "didn't feel like part of the same family": headers varied in size, type lacked hierarchy, spacing was inconsistent. The fix was a tiered header system by tab purpose, a minimal type system, and whitespace instead of containers, balancing consistency with purpose and simplicity with clarity. [79] This is precisely the "bolted on" feeling in Rahnuma's iteration 4 and the cure is the same.
+
+**A home screen is a state router.** The screensdesign survey of fourteen home screens: give the home one primary job per account state; the first card should answer the most likely return question; a resume card must show the object, current unit, progress and a verb so the user can predict what Continue opens; tie every progress number to a period, target, unit and the next contribution; replace first-use teaching once real content exists; test the same route for new, unfinished, completed, empty, overloaded and blocked accounts. [30]
+
+**Pictorial interest inventories.** The Picture Interest Career Survey is 36 items of three pictures each, one choice per item, each picture a person doing a work activity; essentially language-free, RIASEC-coded, validated for ages 10 to 65 and for non-readers. [22] Our finder uses two scenes per round and eight rounds. Three-per-round gives better coverage per tap and the pictures should show a person at work, not an object.
+
+**Khan Academy Kids' visual-first rules.** Minimal written language; every text element is tappable to hear it read; an expressive guide character celebrates and encourages with gestures; a cheerful "ding" and gentle "bong" carry right and wrong without language; animated step-by-step walkthroughs appear when a child is stuck; first-try correct answers send sparkles to a visible delivery truck that eventually brings presents, so progress is seen, not read. [23]
+
+**Xello's split for young children.** K-2 is a story (Career Town's missing workers); grades 3 to 5 get "missions", a space of their own that reflects their interests and achievements, and careers presented as "discoverable facts, stories and biographies". A counsellor reports children cheering when Career Town is announced. [36]
+
+**Taleemabad.** Problems found by living in Pakistani towns: engagement, lack of contextualisation, learning in a foreign language, stunted learning levels. Their response: the national curriculum's learning outcomes turned into an animated series, every episode tested with the Stallings observation method, 4,000 minutes of animation discarded for not performing; a 70% drop in dropouts and 31% better test scores in the 2017 pilot (self-reported); assessments that move a child back to an earlier grade to repair a gap and then forward; a parent dashboard; a strong female protagonist. [59][60]
+
+**Open-ended play.** Sago Mini: "no instructions, no rules to follow"; characters children befriend; wordless story books where the child writes the story; a character creator so children can put themselves in the world. [53]
+
+**Progress feedback.** NN/g: give immediate feedback on every action, and anything over a few seconds needs a visible indicator; feedback reduces perceived waiting and keeps attention. [80]
+
+### wondering.app, reviewed in a browser
+
+Rendered and inspected on 5 November 2026 (desktop and phone). Palette: cream page (rgb 255 252 240), near-black ink (38 20 18), sky-blue primary (122 206 255) with hard offset shadows on buttons, orange, amber and teal accents. Type: Public Sans for body, Share Tech Mono in uppercase for calls to action, radii 8 to 24 px. Structure worth adopting:
+
+- a centred single call to action on the first screen, with "What do you want to learn?" and a row of topic chips, so the first decision is a topic, not a menu;
+- a goal plus a daily-time commitment (5, 15 or 30 minutes) chosen at onboarding and shown as the unit of progress;
+- lessons of about three minutes with varied practice types: multiple choice, click and fill, order the steps;
+- a guided learning path as the home, with an Explore page of illustrated course cards in trending and new rows;
+- personalisation chips ("tell us how you learn best") that are offered, not required;
+- a small expressive blob mascot used sparingly.
+
+Not adopting: the cream and mono-uppercase aesthetic is an adult brand; the hard-shadow button style would clash with our tint system; both would read as another app bolted on.
 
 ## The ten findings that drive the design
 
@@ -109,3 +158,11 @@ Compiled from a sweep of about 200 links across 27 searches on 5 November 2026. 
 71. EdTech Innovation Hub, Khan Academy Reimagined learner dashboard. https://www.edtechinnovationhub.com/news/khan-academy-redesigns-classroom-platform-as-ai-tools-move-further-into-daily-teaching
 72. Screenwise, gamification and reward systems in learning apps (streak obsession caution). https://screenwiseapp.com/guides/gamification-and-reward-systems-in-learning-apps
 73. Raah Offline prototype (uploaded by the product owner), reviewed in browser 5 Nov 2026.
+74. NN/g, Children's UX: usability issues in designing for young people (Sherwin and Nielsen, 2019; 125 children, three studies). https://www.nngroup.com/articles/childrens-websites-usability-issues/
+75. NN/g, Designing for kids: cognitive considerations (Liu, 2018). https://www.nngroup.com/articles/kids-cognition/
+76. NN/g, Autonomy, relatedness and competence in UX design (Kohler, 2022). https://www.nngroup.com/articles/autonomy-relatedness-competence/
+77. Clark, Tanner-Smith and Killingsworth, full text, Review of Educational Research 86(1), 2016. https://pmc.ncbi.nlm.nih.gov/articles/PMC4748544/
+78. Duolingo, The habit-building research behind your Duolingo streak (Mansur, 2022). https://blog.duolingo.com/how-duolingo-streak-builds-habit/
+79. Duolingo, Elevating craft: how we refreshed our core tabs (Lee and Fulfagar, Feb 2026). https://blog.duolingo.com/core-tabs-redesign/
+80. NN/g, Progress indicators make a slow system less insufferable (Sherwin, 2014). https://www.nngroup.com/articles/progress-indicators/
+81. wondering.app, rendered and inspected 5 Nov 2026. https://wondering.app

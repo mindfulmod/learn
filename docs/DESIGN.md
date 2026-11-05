@@ -106,3 +106,59 @@ Grounded in docs/RESEARCH.md. Four problems named by the product owner: still te
 ### Word budget (unchanged) plus
 - Junior screens have no lead text under headers at all.
 - A card never has more than one sentence of body on junior and two on senior.
+
+## Iteration 5: gameplay
+
+Grounded in the full-text reading in docs/RESEARCH.md ("Read in full"). Audit of iteration 4 at 1440px on 5 Nov 2026: the grade 3 home had 142 words and 17 clickable things, its primary action was a 24-question text quiz, the rail repeated the hero, and Practice showed a grade 3 child tabs for grades 6 to 12 plus an adult footnote. The grade 10 My Path was a 260-word document. Every screen was a stack of equal white cards. The research says each of those is a specific, named failure, so this iteration is a redesign of the play loop by age band rather than another density pass.
+
+### Four age bands (NN/g: narrow bands or nothing)
+| Band | Grades | Ages | Reads | Home is | Progress is |
+|---|---|---|---|---|---|
+| early | 1 to 2 | 6 to 7 | not yet | the Town | stickers |
+| primary | 3 to 5 | 8 to 10 | tentatively | the Town | stickers |
+| middle | 6 to 8 | 11 to 13 | scans | quest card + paths | level names, no XP numbers |
+| senior | 9 to 12 | 14 to 17 | scans, 6th-grade level | resume card + plan | XP, accuracy, badges |
+
+`ageBandFor(profile)` in engine/mode.ts. The existing junior/senior density mode stays (junior = early, primary, middle) so nothing already built breaks; the band adds behaviour on top. Settings can still force junior or senior density.
+
+### Grades 1 to 5: Rahnuma Town
+The whole band plays one spatial game. Pre-readers navigate by place (NN/g: spatial metaphors are "very helpful for pre-readers"; Xello: Career Town), every word is tappable to hear (Khan Kids), and progress is a thing you can see fill up (Khan Kids' truck, Sago's wordless world).
+
+- **The Town is the home screen and the Explore screen.** A full-width flat illustrated map (inline SVG, schematic not realistic, per the meta-analysis) with nine places, one per path: Hospital (Healer), Workshop (Builder), Game Studio (Inventor), Market (Leader), Court (Defender), Theatre (Creator), School (Helper), Airfield (Protector), Garden Lab (Explorer). Each place is a tinted building silhouette in its path hue with the path icon and a one-word label. Tap target at least 80px. The map fills the desktop main column and scales to the phone; nothing scrolls on the first screen.
+- **Nav for grades 1 to 5 is three items**: Town, Practice, Stickers. My Path and Explore are hidden for this band (redundant navigation is "very confusing" for children). The context rail is never shown for this band; the week shows as seven suns in the Town header, today's filled when active.
+- **The finder is the signpost.** Before the finder is played, a signpost in the middle of the Town says "Which would you rather do?" with one Play button and a speaker. After it, the three result places glow with a star. Places are always tappable, finder or not (children mine-sweep; let them).
+- **Visit.** Tapping a place opens a Visit panel (side drawer on desktop, bottom sheet on phones): a big Scene of a person doing the work (SceneSpec reused from the picture finder), the one word, a spoken line ("A doctor helps sick people get better"), and two big buttons: **Try it** and **Peek**. Peek is the existing three-step junior Future Preview for the path's lead career.
+- **Try it** is a three-question round from the existing grade 1 to 5 item bank in the subject that place uses (Hospital and Garden Lab: science; Workshop, Game Studio, Market: maths; Theatre, School, Court: English; Airfield: maths), framed by one kicker line ("Help the doctor") and nothing else. Wrong answers show the right answer and the one-line explanation immediately. Finishing awards the place's **sticker**, which appears on the map and in the Sticker book, with the mascot celebration and a ding. Taps count toward the week suns and activeDays like any round.
+- **Stickers** replace Progress for this band: nine slots, earned ones in colour, others as grey outlines, a count "4 of 9", and a Play again for the finder. No percentages, no XP, no level ladder.
+- **Practice** for this band: four big picture tiles (English, Maths, Science, Social Studies) with the subject icon on its hue, no grade tabs, no footnote, tap goes straight into the lesson-then-round flow that exists.
+- Copy: labels of five words or fewer; one spoken sentence per place; no paragraphs anywhere in the band. Every text node in Town, Visit and Stickers is wrapped so a tap reads it aloud.
+
+### Grades 6 to 8: quests
+Keep the current junior home shape but fix the audit failures: the hero is the resume card (below); the rail shows streak and this week only and never repeats the hero; Explore stays master-detail; Practice hides other grade bands behind "Other grades". Level names, no XP arithmetic.
+
+### Grades 9 to 12: plan
+- **Home is a state router** (screensdesign). One primary card chosen by state, in this order: new (play the finder); finder done, no goal (pick a goal, show the top match); goal not previewed (peer into your future); goal set, never practised (first round in the goal's weakest must subject); practised before (resume card: subject, rounds so far, last accuracy, "Next round"); done today (a calm "You're done for today" with the streak and one optional extra); evening and not yet active today (streak at risk: "Keep your streak, 5 minutes"). `homeState(state, now)` in engine/xp.ts returns the card; `nextStep` stays for the hand-offs. The resume card always shows object, unit, progress and a verb so the student can predict what Continue opens.
+- **My Path is a road, not a document.** A winding SVG road with one node per milestone (age badge, icon, title of three words or fewer). The current node is highlighted; tapping a node shows its one-line detail in a side card on desktop and below the road on phones. The rail keeps "This year" and "Groups to choose", trimmed to one line each. Descriptive step names ("Finish Matric"), never codes.
+- **Practice**: on the first visit choose a daily time (5, 10 or 15 minutes, which sets the round to 4, 8 or 12 questions; wondering.app pattern) and before each round a plain Easy / Normal / Hard choice (Smeddinck: players want manual choice; adaptivity continues inside the round). Both are remembered in `prefs` and changeable in Settings. Other grade bands sit behind "Other grades". No "+80 XP" badge on every tile; the earnable XP appears once in the header line.
+- **Streak with forgiveness** (Duolingo): the streak survives one missed day in any seven; the status chip shows a small shield on the day it was used. Milestones at 3, 7, 14 and 30 days trigger the Celebrate overlay once each.
+- **Progress zero state**: never "0%"; before any round the accuracy card says "No rounds yet" with a Start button.
+
+### Cohesion: the Duolingo core-tabs fix
+- **Header tiers by purpose.** Tier 1, Today and Town: no tinted banner; greeting or map only. Tier 2, My Path, Explore, Practice picker, Progress: compact tinted header (about 96px) with the title, section art at 64px, a lead of at most ten words on senior and none on junior. Tier 3, quiz, visit, career detail: a plain title row.
+- **One type system**: display 32, 24 and 20; body 16; small 14; kicker 12 uppercase. No other sizes.
+- **Whitespace, not containers.** No card inside a tinted card. The rail is plain groups separated by space, not a stack of white cards. Course tiles and path tiles carry colour; everything else is quiet.
+- **One primary button per screen**, secondary actions quiet; every flow still ends in a hand-off.
+
+### Copy rules by band
+- early and primary: five words per label, one spoken sentence per thing, read-aloud on tap.
+- middle: ten words per line, no footnotes.
+- senior: 6th-grade reading level, sentences of fourteen words or fewer, no footnotes, no "kids".
+
+### Data model additions
+- `StudentState.stickers: string[]` of cluster ids (the place visited and tried).
+- `StudentState.prefs: { dailyMinutes: 5 | 10 | 15; difficulty: 'easy' | 'normal' | 'hard' }`, defaulting to 10 and normal.
+- Streak forgiveness is computed, not stored.
+
+### Not in this iteration
+- New item types (order the steps, fill the blank) need authored data for 180 items and are deferred; the variety for now comes from lesson, round, visit and finder.
+- A parent view (Taleemabad's portal) is deferred until there is something to report.

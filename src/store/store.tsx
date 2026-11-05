@@ -1,11 +1,13 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useMemo, useReducer, type ReactNode } from 'react'
 import { todayKey } from '../engine/profile'
-import type { DiscoveryResult, InterestId, Profile, QuizAttempt, StudentState } from '../types'
+import type { CareerCluster, DiscoveryResult, InterestId, Prefs, Profile, QuizAttempt, StudentState } from '../types'
 
 const KEY = 'rahnuma.v1'
 
-export const EMPTY: StudentState = { version: 1, profile: null, goals: [], discovery: null, finder: null, previewed: [], interests: [], attempts: [], activeDays: [] }
+export const DEFAULT_PREFS: Prefs = { dailyMinutes: 10, difficulty: 'normal' }
+
+export const EMPTY: StudentState = { version: 1, profile: null, goals: [], discovery: null, finder: null, previewed: [], interests: [], attempts: [], activeDays: [], stickers: [], prefs: DEFAULT_PREFS }
 
 type Action =
   | { type: 'set-profile'; profile: Profile }
@@ -15,6 +17,8 @@ type Action =
   | { type: 'mark-previewed'; careerId: string }
   | { type: 'set-interests'; interests: InterestId[] }
   | { type: 'add-attempt'; attempt: QuizAttempt }
+  | { type: 'add-sticker'; cluster: CareerCluster }
+  | { type: 'set-prefs'; prefs: Partial<Prefs> }
   | { type: 'import'; state: StudentState }
   | { type: 'reset' }
 
@@ -34,6 +38,10 @@ function reducer(state: StudentState, action: Action): StudentState {
       return state.previewed.includes(action.careerId) ? state : { ...state, previewed: [...state.previewed, action.careerId] }
     case 'add-attempt':
       return { ...state, attempts: [...state.attempts, action.attempt], activeDays: addDay(state.activeDays) }
+    case 'add-sticker':
+      return state.stickers.includes(action.cluster) ? state : { ...state, stickers: [...state.stickers, action.cluster], activeDays: addDay(state.activeDays) }
+    case 'set-prefs':
+      return { ...state, prefs: { ...state.prefs, ...action.prefs } }
     case 'import':
       return sanitise(action.state)
     case 'reset':
@@ -59,6 +67,11 @@ export function sanitise(raw: unknown): StudentState {
     interests: Array.isArray(r.interests) ? (r.interests.filter((i) => typeof i === 'string') as InterestId[]) : [],
     attempts: Array.isArray(r.attempts) ? r.attempts.filter((a) => a && typeof a.subjectId === 'string') : [],
     activeDays: Array.isArray(r.activeDays) ? r.activeDays.filter((d) => typeof d === 'string') : [],
+    stickers: Array.isArray(r.stickers) ? (r.stickers.filter((c) => typeof c === 'string') as CareerCluster[]) : [],
+    prefs: {
+      dailyMinutes: r.prefs && [5, 10, 15].includes(r.prefs.dailyMinutes) ? r.prefs.dailyMinutes : DEFAULT_PREFS.dailyMinutes,
+      difficulty: r.prefs && ['easy', 'normal', 'hard'].includes(r.prefs.difficulty) ? r.prefs.difficulty : DEFAULT_PREFS.difficulty,
+    },
   }
 }
 
@@ -80,6 +93,8 @@ interface Store {
   markPreviewed: (careerId: string) => void
   setInterests: (interests: InterestId[]) => void
   addAttempt: (a: QuizAttempt) => void
+  addSticker: (cluster: CareerCluster) => void
+  setPrefs: (prefs: Partial<Prefs>) => void
   importState: (s: StudentState) => void
   reset: () => void
 }
@@ -107,6 +122,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       markPreviewed: (careerId) => dispatch({ type: 'mark-previewed', careerId }),
       setInterests: (interests) => dispatch({ type: 'set-interests', interests }),
       addAttempt: (attempt) => dispatch({ type: 'add-attempt', attempt }),
+      addSticker: (cluster) => dispatch({ type: 'add-sticker', cluster }),
+      setPrefs: (prefs) => dispatch({ type: 'set-prefs', prefs }),
       importState: (s) => dispatch({ type: 'import', state: s }),
       reset: () => dispatch({ type: 'reset' }),
     }),

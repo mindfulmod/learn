@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
-import { Compass, Flame, Home, Map as MapIcon, Settings, Sparkles, Target, TrendingUp, Zap } from 'lucide-react'
-import { modeFor } from '../engine/mode'
+import { Compass, Flame, Home, Map as MapIcon, Settings, Sparkles, Sticker, Target, TrendingUp, Zap } from 'lucide-react'
+import { modeFor, playsTown } from '../engine/mode'
 import { levelFor, totalXp } from '../engine/xp'
 import { streak } from '../engine/profile'
 import { useStore } from '../store/store'
@@ -15,6 +15,13 @@ const NAV = [
   { to: '/progress', label: 'Progress', icon: TrendingUp },
 ]
 
+/** Grades 1 to 5: three destinations, no redundant navigation (NN/g). */
+const TOWN_NAV = [
+  { to: '/', label: 'Town', icon: Home, end: true },
+  { to: '/practice', label: 'Practice', icon: Target },
+  { to: '/stickers', label: 'Stickers', icon: Sticker },
+]
+
 export function Layout() {
   const { state } = useStore()
   const loc = useLocation()
@@ -25,17 +32,19 @@ export function Layout() {
   const st = streak(state.activeDays)
   const focus = /^\/practice\/[^/]+/.test(loc.pathname) || (loc.pathname === '/finder' && state.finder === null)
   const mode = modeFor(state.profile)
-  const section = loc.pathname === '/' ? 'today' : loc.pathname.startsWith('/path') || loc.pathname.startsWith('/curriculum') ? 'path' : loc.pathname.startsWith('/careers') || loc.pathname.startsWith('/finder') || loc.pathname.startsWith('/discover') ? 'explore' : loc.pathname.startsWith('/practice') ? 'practice' : loc.pathname.startsWith('/progress') ? 'progress' : 'today'
+  const town = playsTown(state.profile)
+  const nav = town ? TOWN_NAV : NAV
+  const section = loc.pathname === '/' ? 'today' : loc.pathname.startsWith('/path') || loc.pathname.startsWith('/curriculum') ? 'path' : loc.pathname.startsWith('/careers') || loc.pathname.startsWith('/finder') || loc.pathname.startsWith('/discover') ? 'explore' : loc.pathname.startsWith('/practice') ? 'practice' : loc.pathname.startsWith('/progress') || loc.pathname.startsWith('/stickers') ? 'progress' : 'today'
 
   return (
-    <div className={`shell ${focus ? 'focus' : ''} ${mode} section-${section} ${section === 'explore' ? 'wide-main' : ''}`}>
+    <div className={`shell ${focus ? 'focus' : ''} ${mode} ${town ? 'town' : ''} section-${section} ${section === 'explore' || (town && section === 'today') ? 'wide-main' : ''}`}>
       <aside className="sidebar" aria-label="Main navigation">
         <Link to="/" className="brand">
           <img src={`${base}favicon.svg`} alt="" />
           <span>Rahnuma</span>
         </Link>
         <nav className="sidenav">
-          {NAV.map((n) => (
+          {nav.map((n) => (
             <NavLink key={n.to} to={n.to} end={n.end}>
               <n.icon size={20} strokeWidth={2.2} aria-hidden="true" />
               {n.label}
@@ -85,7 +94,7 @@ export function Layout() {
       </div>
 
       <nav className="tabbar" aria-label="Main">
-        {NAV.map((n) => (
+        {nav.map((n) => (
           <NavLink key={n.to} to={n.to} end={n.end}>
             <n.icon size={22} strokeWidth={2.2} aria-hidden="true" />
             {n.label}

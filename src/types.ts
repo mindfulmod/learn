@@ -176,9 +176,20 @@ export interface QuizAttempt {
   durationSec: number
 }
 
+/** Preferences a student sets once and can change in Settings. */
+export interface Prefs {
+  /** Daily time commitment; sets the round length (4, 8 or 12 questions). */
+  dailyMinutes: 5 | 10 | 15
+  /** Manual difficulty choice before a round; adaptivity still runs inside it. */
+  difficulty: 'easy' | 'normal' | 'hard'
+}
+
 export interface StudentState {
   version: 1
   profile: Profile | null
+  /** Town stickers (grades 1 to 5): cluster ids of places visited and tried. */
+  stickers: CareerCluster[]
+  prefs: Prefs
   goals: string[]
   discovery: DiscoveryResult | null
   /** Answers from the scenario-based Career Finder, keyed by question id. */

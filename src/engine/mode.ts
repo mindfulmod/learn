@@ -3,6 +3,29 @@ import type { Profile } from '../types'
 export type Mode = 'junior' | 'senior'
 
 /**
+ * Age bands, after NN/g: children a single grade apart reject each other's
+ * content, so behaviour is tuned per band. early and primary play the Town;
+ * middle gets quests; senior plans. Density (junior/senior) is separate.
+ */
+export type AgeBand = 'early' | 'primary' | 'middle' | 'senior'
+
+export function ageBandFor(profile: Profile | null): AgeBand {
+  if (!profile) return 'senior'
+  if (profile.mode === 'senior') return 'senior'
+  const g = profile.grade
+  if (g <= 2) return 'early'
+  if (g <= 5) return 'primary'
+  if (g <= 8) return 'middle'
+  return 'senior'
+}
+
+/** True for grades 1 to 5: the Town replaces Today and Explore. */
+export function playsTown(profile: Profile | null): boolean {
+  const b = ageBandFor(profile)
+  return b === 'early' || b === 'primary'
+}
+
+/**
  * Junior (grades 1-8): one idea per screen, short words, no percentages,
  * read-aloud, interests instead of quizzes. Senior (9-12): full detail.
  */

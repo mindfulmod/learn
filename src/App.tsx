@@ -11,6 +11,9 @@ import { Onboarding } from './pages/Onboarding'
 import { Practice } from './pages/Practice'
 import { Progress } from './pages/Progress'
 import { Settings } from './pages/Settings'
+import { StickerBook } from './pages/StickerBook'
+import { TownPage } from './pages/TownPage'
+import { playsTown } from './engine/mode'
 import { useStore } from './store/store'
 
 function RequireProfile({ children }: { children: React.ReactNode }) {
@@ -18,6 +21,18 @@ function RequireProfile({ children }: { children: React.ReactNode }) {
   const loc = useLocation()
   if (!state.profile) return <Navigate to="/onboarding" replace state={{ from: loc.pathname }} />
   return <>{children}</>
+}
+
+/** Grades 1 to 5 live in the Town; everyone else gets Today. */
+function Home() {
+  const { state } = useStore()
+  return playsTown(state.profile) ? <TownPage /> : <Dashboard />
+}
+
+/** Grades 1 to 5 explore through the Town, so Explore and My Path send them home. */
+function TownOr({ children }: { children: React.ReactNode }) {
+  const { state } = useStore()
+  return playsTown(state.profile) ? <Navigate to="/" replace /> : <>{children}</>
 }
 
 export default function App() {
@@ -31,10 +46,25 @@ export default function App() {
           </RequireProfile>
         }
       >
-        <Route index element={<Dashboard />} />
-        <Route path="path" element={<Path />} />
+        <Route index element={<Home />} />
+        <Route
+          path="path"
+          element={
+            <TownOr>
+              <Path />
+            </TownOr>
+          }
+        />
         <Route path="curriculum" element={<Curriculum />} />
-        <Route path="careers" element={<Careers />} />
+        <Route
+          path="careers"
+          element={
+            <TownOr>
+              <Careers />
+            </TownOr>
+          }
+        />
+        <Route path="stickers" element={<StickerBook />} />
         <Route path="careers/:id" element={<CareerDetail />} />
         <Route path="discover" element={<Discover />} />
         <Route path="finder" element={<Finder />} />
