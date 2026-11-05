@@ -47,6 +47,7 @@
   .statusbar { padding: 0 32px; background: transparent; border-bottom: 0; backdrop-filter: none; -webkit-backdrop-filter: none; position: static; height: 64px; }
   .statusbar .brand.compact { display: none; }
 }
+.statusbar .spacer { flex: 1; }
 .brand.compact img { width: 32px; height: 32px; }
 .stat-chip {
   display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; height: 38px; border-radius: 999px;

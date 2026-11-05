@@ -98,5 +98,4 @@
 .missions.roomy { gap: 12px; }
 .missions.roomy a { min-height: 48px; }
 .badge-tile .tile-icon { width: 44px; height: 44px; }
-.recent-list li { padding: 6px 0; }
-.recent-list li + li { border-top: 1px solid var(--border); }
+.recent-list li { gap: 6px; }
