@@ -23,7 +23,8 @@ import {
 } from 'lucide-react'
 import { AREA_META, CLUSTER_META, TRAIT_META, subjectIcon, tint } from '../design'
 import { CLUSTER_NAMES, getCareer } from '../data/careers'
-import { careerLife, formatPkr, type Demand } from '../data/careerLife'
+import { careerLife, type Demand } from '../data/careerLife'
+import { PayBand, PayCoins } from './PayBand'
 import { TRAIT_NAMES } from '../data/discovery'
 import { getSubject, subjectName } from '../data/subjects'
 import { getStream } from '../data/streams'
@@ -199,7 +200,7 @@ export function FuturePreview({ careerId, onClose }: { careerId: string; onClose
 
   if (!career) {
     return createPortal(
-      <div className="fp-backdrop" onClick={onClose}>
+      <div className="fp-backdrop drawer" onClick={onClose}>
         <div className="fp-panel" role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} ref={dialogRef} onClick={(e) => e.stopPropagation()}>
           <div className="fp-body">
             <h2 id={titleId}>Career not found</h2>
@@ -306,6 +307,9 @@ export function FuturePreview({ careerId, onClose }: { careerId: string; onClose
                 <TrendingUp size={18} strokeWidth={2.3} />
               </span>
               <b className="fp-demand-text">{life.demand} demand</b>
+            </div>
+            <div className="fp-fact" style={tint(42)}>
+              <PayCoins life={life} />
             </div>
           </div>
         )}
@@ -530,22 +534,7 @@ export function FuturePreview({ careerId, onClose }: { careerId: string; onClose
             </Section>
 
             <Section icon={Banknote} title="What it pays" hue={160}>
-              <div className="fp-pay">
-                <div className="fp-pay-tile" style={tint(160)}>
-                  <span className="kicker">Starting out</span>
-                  <b>
-                    Rs {formatPkr(life.pay.entry[0])} – {formatPkr(life.pay.entry[1])}
-                  </b>
-                  <span className="small muted">/ month</span>
-                </div>
-                <div className="fp-pay-tile" style={tint(258)}>
-                  <span className="kicker">10 years in</span>
-                  <b>
-                    Rs {formatPkr(life.pay.experienced[0])} – {formatPkr(life.pay.experienced[1])}
-                  </b>
-                  <span className="small muted">/ month</span>
-                </div>
-              </div>
+              <PayBand life={life} />
               <p className="small muted fp-note">Approximate, varies a lot by city and employer.</p>
             </Section>
 
@@ -658,7 +647,7 @@ export function FuturePreview({ careerId, onClose }: { careerId: string; onClose
   }
 
   return createPortal(
-    <div className="fp-backdrop" onClick={onClose}>
+    <div className="fp-backdrop drawer" onClick={onClose}>
       <div
         className="fp-panel"
         role="dialog"

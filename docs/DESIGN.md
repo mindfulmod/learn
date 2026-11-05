@@ -76,3 +76,33 @@ What the Raah prototype gets right and we adopt: one sentence and one button on 
 - Every primary section has a hue (Today violet, My Path amber, Explore pink, Practice mint, Progress green) applied to its header art, tiles and active nav.
 - Card forms vary on purpose: gradient hero, pastel tile, plain white card, bordered row. Never a screen of identical white cards.
 - Paths use distinct pastel tiles and icons; subjects use their area hue; careers use their cluster hue.
+
+## Iteration 4: desktop composition, picture finder, pay, cohesion
+
+Grounded in docs/RESEARCH.md. Four problems named by the product owner: still text heavy; feels like a phone app on desktop; salary missing; parts feel bolted on (a quiz ends on a page that does not feel like the app).
+
+### Desktop composition (≥ 1024px)
+- **Context rail.** A 320px right rail on Today, Practice (picker) and Progress holds the things that were tiles: streak dots, this week's missions (senior) or three small next steps (junior), one coach line. The main column is then free for the one thing that matters on that screen.
+- **Master-detail on Explore.** Left column (320px) lists the nine paths; the right pane shows the selected path's careers; selecting a career shows its detail in the same pane. No page jumps. Phones stack and drill down.
+- **Preview as a drawer.** On desktop the Future Preview slides in from the right (560px) over the content, so the sidebar and page stay visible. Phones keep the bottom sheet.
+- **Quiz keeps the shell on desktop.** Focus mode removes only the rail and status chips on wide screens; the sidebar stays so the student never leaves the app. Phones keep full focus.
+- **Line length capped** at about 65 characters everywhere text runs long.
+
+### Cohesion rules
+- One `Screen` component for every page: header, main, optional rail. No page builds its own frame.
+- One primary button per screen. Secondary actions are quiet.
+- Every flow ends with a hand-off, not a dead end: the results screen shows "Next up" (from nextStep) and "Back to Practice"; the finder ends in paths; the preview ends in "Set as my goal" or "Explore another".
+- Shared tokens for motion: 200ms ease-out for state, 350ms for step transitions, one animation at a time.
+
+### Picture finder (grades 1 to 5)
+- Eight rounds. Each shows two large illustrated scenes (built from the Orb system and lucide icons, no photographs) and a spoken prompt "Which would you rather do?" with a speaker button. No reading required; one short label under each scene for readers.
+- Each scene maps to career clusters with weights, like the text finder. Results: three illustrated path tiles with one word each ("Helper", "Builder", "Explorer") and two buttons: "Peek" (junior preview) and "Try it" (practice in a related subject).
+- Routes: /finder chooses the picture finder when grade ≤ 5 (or Settings sets Junior and grade ≤ 5). Answers persist in the same `finder` field with a `picture:` prefix on option ids so the text finder and picture finder never mix.
+
+### Pay
+- `PayBand` component: a horizontal band from entry low to experienced high in PKR per month, with a marker for the national median (about Rs 70k) and the label "Estimate, Pakistan 2025". Shown in career detail, the Explore detail pane and preview step 4 (senior).
+- Juniors see a three-coin scale ("Pays OK", "Pays well", "Pays very well") derived from the experienced midpoint: under 200k, 200k to 500k, above 500k.
+
+### Word budget (unchanged) plus
+- Junior screens have no lead text under headers at all.
+- A card never has more than one sentence of body on junior and two on senior.

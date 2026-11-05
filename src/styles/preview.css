@@ -248,3 +248,21 @@
 }
 .fp-read:hover { background: rgb(255 255 255 / 0.32); }
 .fp-no-voice { display: block; margin-top: 6px; font-size: 0.8rem; color: rgb(255 255 255 / 0.85); }
+
+/* ---------- Iteration 4: drawer on desktop, pay ------------------------ */
+.fp-facts.fp-facts-junior { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+.fp-facts-junior .paycoins { flex-wrap: wrap; font-size: 1.02rem; color: var(--text); }
+@media (max-width: 480px) { .fp-facts.fp-facts-junior { grid-template-columns: 1fr; } }
+.fp-step .payband { margin-bottom: 6px; }
+
+/* Desktop: the preview slides in from the right; sidebar and page stay visible. */
+@media (min-width: 1024px) {
+  .fp-backdrop.drawer { display: flex; justify-content: flex-end; align-items: stretch; padding: 0; background: rgb(10 8 24 / 0.32); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); }
+  .fp-backdrop.drawer .fp-panel {
+    width: 600px; max-width: 600px; height: 100dvh; max-height: 100dvh;
+    border-radius: 28px 0 0 28px; animation: fp-drawer 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .fp-backdrop.drawer .fp-facts:not(.fp-facts-junior) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@keyframes fp-drawer { from { transform: translateX(48px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .fp-backdrop.drawer .fp-panel { animation: none; } }

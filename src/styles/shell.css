@@ -240,3 +240,75 @@
 .junior .btn { min-height: 52px; font-size: 1rem; }
 .junior .choice { font-size: 1.05rem; min-height: 60px; }
 .junior .small { font-size: 0.92rem; }
+
+/* ---------- Screen frame (iteration 4) --------------------------------- */
+.screen { display: flex; flex-direction: column; gap: 0; }
+.screen-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; align-items: start; }
+.screen-main { min-width: 0; }
+.screen-rail { min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+@media (min-width: 1024px) {
+  .screen.has-rail .screen-body { grid-template-columns: minmax(0, 1fr) 320px; }
+  .screen-rail { position: sticky; top: 16px; }
+}
+.content main { max-width: 1320px; }
+.shell.wide-main .content main { max-width: 1440px; }
+.prose, .lead, .card p, .tile p { max-width: 65ch; }
+
+/* Rail cards: quiet, compact */
+.rail-card { padding: 16px 18px; }
+.rail-card .tile-label { margin-bottom: 8px; display: block; }
+.rail-card .steps li { padding: 10px 0; }
+.rail-card .steps .num { width: 30px; height: 30px; border-radius: 10px; font-size: 0.85rem; }
+
+/* Master-detail */
+.master-detail { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (min-width: 1024px) { .master-detail { grid-template-columns: 320px minmax(0, 1fr); } .master-detail .master { position: sticky; top: 16px; } }
+.master-list { display: flex; flex-direction: column; gap: 6px; }
+.master-item {
+  display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 14px; border: 1px solid transparent;
+  color: var(--text); font-weight: 600; background: transparent; cursor: pointer; font: inherit; text-align: left; width: 100%; min-height: 52px;
+}
+.master-item:hover { background: var(--surface-2); text-decoration: none; }
+.master-item.active { background: var(--tint-soft); border-color: transparent; color: var(--tint-strong); }
+.master-item .tile-icon { width: 36px; height: 36px; border-radius: 11px; }
+.master-item .tile-icon svg { width: 18px; height: 18px; }
+.detail-pane { min-height: 320px; }
+
+/* Drawer (desktop preview) */
+@media (min-width: 1024px) {
+  .preview-backdrop.drawer { justify-content: flex-end; align-items: stretch; }
+  .preview-backdrop.drawer .preview-panel { max-height: 100dvh; height: 100dvh; width: 600px; max-width: 600px; border-radius: 28px 0 0 28px; animation: slide-in 0.32s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+}
+@keyframes slide-in { from { transform: translateX(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* Quiz keeps the sidebar on desktop; focus only trims the rail */
+@media (min-width: 1024px) {
+  .shell.focus .sidebar { display: flex; }
+  .shell.focus { grid-template-columns: 256px 1fr; }
+  .shell.focus .content main { max-width: 860px; }
+}
+
+/* Pay band */
+.payband { display: flex; flex-direction: column; gap: 8px; }
+.payband-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.payband-track { position: relative; height: 14px; border-radius: 999px; background: var(--surface-2); overflow: visible; }
+.payband-range { position: absolute; top: 0; bottom: 0; border-radius: 999px; background: var(--gradient-mint); opacity: 0.55; }
+.payband-entry { position: absolute; top: 0; bottom: 0; border-radius: 999px; background: var(--gradient-mint); }
+.payband-median { position: absolute; top: -5px; bottom: -5px; width: 3px; border-radius: 2px; background: var(--text); transform: translateX(-50%); opacity: 0.7; }
+.payband-labels { position: relative; display: flex; justify-content: space-between; gap: 8px; padding-top: 14px; }
+.payband-labels > span { display: flex; flex-direction: column; line-height: 1.2; }
+.payband-labels b { font-family: var(--font-display); font-size: 0.95rem; }
+.payband-labels small { color: var(--muted); font-size: 0.72rem; }
+.payband-median-label { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
+@media (max-width: 480px) { .payband-median-label { display: none; } }
+.payband.compact .payband-labels { padding-top: 6px; }
+.paycoins { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; color: var(--text-2); }
+.paycoins svg { color: var(--border-strong); }
+.paycoins svg.on { color: hsl(42 95% 48%); }
+.paycoins span { margin-left: 6px; }
+
+/* Next-up hand-off card */
+.handoff { display: flex; align-items: center; gap: 16px; }
+.handoff .handoff-body { flex: 1; min-width: 0; }
+.handoff .tile-label { display: block; margin-bottom: 2px; }
+.handoff h3 { margin: 0 0 2px; }
