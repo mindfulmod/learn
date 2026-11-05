@@ -1,20 +1,27 @@
 import { useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { BookOpen, ChevronRight } from 'lucide-react'
+import { BookOpen, Check, ChevronRight } from 'lucide-react'
 import { getBoard, gradeLabel } from '../data/boards'
 import { careerTitle } from '../data/careers'
 import { getStream } from '../data/streams'
+import { modeFor } from '../engine/mode'
 import { sanitise, useStore } from '../store/store'
 import { PageHeader } from '../components/PageHeader'
 import { IconTile } from '../components/ui'
 import { tint } from '../design'
 
 export function Settings() {
-  const { state, importState, reset } = useStore()
+  const { state, importState, reset, setProfile } = useStore()
   const nav = useNavigate()
   const fileRef = useRef<HTMLInputElement>(null)
   const [message, setMessage] = useState<string | null>(null)
   const p = state.profile!
+  const current = modeFor(p)
+  const modes: { id: 'junior' | 'senior' | undefined; title: string; body: string }[] = [
+    { id: undefined, title: 'Automatic (by grade)', body: `Grade ${p.grade} uses ${p.grade <= 8 ? 'Junior' : 'Senior'}.` },
+    { id: 'junior', title: 'Junior', body: 'Simpler, bigger, fewer words (grades 1-8).' },
+    { id: 'senior', title: 'Senior', body: 'Full detail (grades 9-12).' },
+  ]
 
   const exportJson = () => {
     const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' })
@@ -31,9 +38,9 @@ export function Settings() {
       const parsed = sanitise(JSON.parse(await file.text()))
       if (!parsed.profile) throw new Error('No profile in file')
       importState(parsed)
-      setMessage(`Imported ${parsed.profile.name}'s progress (${parsed.attempts.length} rounds).`)
+      setMessage(`Imported ${parsed.profile.name}'s progress.`)
     } catch {
-      setMessage('That file could not be read. Make sure it was exported from Rahnuma.')
+      setMessage('Could not read that file. Use a Rahnuma export.')
     }
   }
 
@@ -46,14 +53,39 @@ export function Settings() {
 
   return (
     <>
-      <PageHeader kicker="You" title="Settings" lead="Your profile, your data and where to find everything else." />
+      <PageHeader themed hue={258} variant={0} kicker="You" title="Settings" lead="Your profile, your look and your data." />
+
+      <section className="card pastel section" aria-labelledby="interface-title">
+        <div className="row between" style={{ marginBottom: 12 }}>
+          <h3 id="interface-title" style={{ margin: 0 }}>
+            Interface
+          </h3>
+          <span className="badge tinted" style={{ background: 'var(--surface)' }}>
+            Now: {current === 'junior' ? 'Junior' : 'Senior'}
+          </span>
+        </div>
+        <div className="choices">
+          {modes.map((m) => {
+            const on = p.mode === m.id
+            return (
+              <button key={m.title} className={`choice ${on ? 'selected' : ''}`} aria-pressed={on} onClick={() => setProfile({ ...p, mode: m.id })}>
+                <strong className="row" style={{ gap: 8, justifyContent: 'space-between', flexWrap: 'nowrap' }}>
+                  {m.title}
+                  {on && <Check size={18} aria-hidden="true" />}
+                </strong>
+                <span className="small muted">{m.body}</span>
+              </button>
+            )
+          })}
+        </div>
+      </section>
 
       <Link to="/curriculum" className="card lift section" style={{ display: 'flex', alignItems: 'center', gap: 14, ...tint(215) }}>
         <IconTile hue={215} icon={BookOpen} />
         <span style={{ flex: 1, minWidth: 0 }}>
           <b>Curriculum</b>
           <span className="small" style={{ display: 'block', color: 'var(--text-2)' }}>
-            Browse your full curriculum, grade by grade.
+            Every subject, grade by grade.
           </span>
         </span>
         <ChevronRight size={20} aria-hidden="true" style={{ color: 'var(--muted)', flexShrink: 0 }} />
@@ -84,9 +116,7 @@ export function Settings() {
 
       <div className="card section">
         <h3>Your data</h3>
-        <p className="small muted">
-          Everything lives in this browser only. Export a file to move to another device or to keep a backup, then import it there.
-        </p>
+        <p className="small muted">Saved in this browser only. Export to back up or move.</p>
         <div className="row">
           <button className="btn" onClick={exportJson}>
             Export progress
@@ -111,7 +141,7 @@ export function Settings() {
 
       <div className="card section">
         <h3>Start over</h3>
-        <p className="small muted">Removes the profile, discovery answers and all practice history from this device.</p>
+        <p className="small muted">Removes your profile and all progress from this device.</p>
         <button className="btn danger" onClick={doReset}>
           Delete everything
         </button>
@@ -120,7 +150,7 @@ export function Settings() {
       <div className="card soft">
         <h3>About Rahnuma</h3>
         <p className="small muted" style={{ margin: 0 }}>
-          A learning guide for students in Pakistan covering the national boards, Cambridge and AKU-EB. Curriculum outlines and career paths are summaries for guidance; always confirm admission requirements with the institution. Version 0.1.
+          A learning and career guide for Pakistani students. Confirm admission rules with each institution. Version 0.1.
         </p>
       </div>
     </>

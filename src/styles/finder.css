@@ -71,12 +71,12 @@
 
 .finder-results { margin-top: 20px; align-items: stretch; }
 .finder-cluster {
-  display: flex; flex-direction: column; gap: 14px; position: relative; overflow: hidden;
+  display: flex; flex-direction: column; gap: 14px; position: relative; overflow: hidden; min-width: 0;
+  background: var(--tint-soft); border-color: transparent; box-shadow: none;
   animation: rise 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
-.finder-cluster::before {
-  content: ''; position: absolute; inset: 0 0 auto 0; height: 5px; background: var(--tint-gradient);
-}
+.finder-cluster .tile-icon { background: var(--surface); color: var(--tint-strong); box-shadow: none; }
+.finder-cluster .junior-why { font-style: normal; min-height: 0; font-size: 1rem; }
 .finder-cluster-head { flex-wrap: nowrap; gap: 12px; }
 .finder-cluster-head h3 { margin: 0; font-size: 1.1rem; line-height: 1.25; }
 .finder-rank { display: block; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--tint-strong); }

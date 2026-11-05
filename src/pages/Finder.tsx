@@ -5,7 +5,9 @@ import { FINDER_QUESTIONS, type FinderOption } from '../data/finder'
 import { CLUSTER_NAMES } from '../data/careers'
 import { careerLife, formatPkr } from '../data/careerLife'
 import { scoreFinder } from '../engine/finder'
+import { modeFor } from '../engine/mode'
 import { buildProfile } from '../engine/profile'
+import { pathFor } from '../data/paths'
 import { useStore } from '../store/store'
 import { CLUSTER_META, tint } from '../design'
 import { FuturePreview } from '../components/FuturePreview'
@@ -126,10 +128,7 @@ export function Finder() {
         <Orb hue={320} size={200} variant={1} />
         <span className="kicker">Career finder</span>
         <h1>Not sure what you want to be? Good.</h1>
-        <p className="lead">
-          Most people your age aren't. Answer 8 quick 'would you rather' questions and we'll show you three futures worth a look. No wrong
-          answers, and you can change your mind any time.
-        </p>
+        <p className="lead">Eight quick 'would you rather' questions. Three futures to explore.</p>
         <button className="btn primary finder-play" onClick={() => setStarted(true)}>
           <Sparkles size={18} aria-hidden="true" />
           Let's play
@@ -196,6 +195,7 @@ export function Finder() {
   // ---- C. Results ------------------------------------------------------
   if (!result) return null
   const answered = state.finder
+  const junior = modeFor(state.profile) === 'junior'
   const byCluster = (c: CareerCluster) => result.careers.filter((r) => r.career.cluster === c).slice(0, 3)
   const previewBtn = (career: Career) => (
     <button className="btn sm" onClick={() => setPreview(career.id)} aria-label={`Preview life as ${career.title}`}>
@@ -210,12 +210,12 @@ export function Finder() {
         <div className="finder-note small">
           <Flag size={16} aria-hidden="true" />
           <span>
-            You already have a goal set. Exploring is still a good idea. <Link to="/">Back to my goal</Link>
+            You have a goal already. Exploring still helps. <Link to="/">Back to my goal</Link>
           </span>
         </div>
       )}
 
-      <PageHeader kicker="Your results" title="Three futures worth a look" lead="Based on how you answered. These are starting points, not verdicts." />
+      <PageHeader themed hue={320} variant={1} kicker="Your results" title="Three futures worth a look" lead="Starting points, not verdicts." />
 
       <div className="grid cols-3 section finder-results">
         {result.topClusters.map((c, rank) => {
@@ -224,16 +224,20 @@ export function Finder() {
           const pct = result.clusters[c]
           const reasons = reasonsFor(c, answered)
           return (
-            <article key={c} className="card tinted finder-cluster" style={{ ...tint(meta.hue), animationDelay: `${rank * 80}ms` }}>
+            <article key={c} className="card pastel finder-cluster" style={{ ...tint(meta.hue), animationDelay: `${rank * 80}ms` }}>
               <div className="row finder-cluster-head">
                 <span className="tile-icon">
                   <Icon aria-hidden="true" />
                 </span>
                 <div>
                   <span className="finder-rank">Future {rank + 1}</span>
-                  <h3>{CLUSTER_NAMES[c]}</h3>
+                  <h3>{junior ? pathFor(c).title : CLUSTER_NAMES[c]}</h3>
                 </div>
               </div>
+              {junior ? (
+                <p className="finder-why junior-why">{pathFor(c).promise}</p>
+              ) : (
+                <>
               <div className="finder-match">
                 <div className="row between small">
                   <span className="muted">Match</span>
@@ -253,6 +257,9 @@ export function Finder() {
                   <>Your answers leaned this way overall.</>
                 )}
               </p>
+                </>
+              )}
+              {!junior && (
               <ul className="finder-careers">
                 {byCluster(c).map(({ career, score }) => (
                   <li key={career.id}>
@@ -267,11 +274,34 @@ export function Finder() {
                   </li>
                 ))}
               </ul>
+              )}
             </article>
           )
         })}
       </div>
 
+      {junior ? (
+        <section className="card section">
+          <h3>Careers to try</h3>
+          <ul className="steps">
+            {result.careers.slice(0, 5).map(({ career }, i) => (
+              <li key={career.id} style={tint(CLUSTER_META[career.cluster].hue)}>
+                <span className="num">{i + 1}</span>
+                <span className="step-body">
+                  <Link to={`/careers/${career.id}`}>
+                    <b>{career.title}</b>
+                  </Link>
+                </span>
+                {previewBtn(career)}
+              </li>
+            ))}
+          </ul>
+          <Link to="/careers" className="finder-all">
+            See all the paths
+            <ArrowRight size={16} aria-hidden="true" />
+          </Link>
+        </section>
+      ) : (
       <section className="card section">
         <div className="section-head">
           <h2>All careers ranked for you</h2>
@@ -301,6 +331,7 @@ export function Finder() {
           <ArrowRight size={16} aria-hidden="true" />
         </Link>
       </section>
+      )}
 
       <div className="section stack">
         {!state.discovery && (
@@ -309,8 +340,8 @@ export function Finder() {
               <Lightbulb aria-hidden="true" />
             </span>
             <div>
-              <b>Want sharper results? Take the 5-minute discovery quiz</b>
-              <span className="small muted">It looks at your interests in more detail and makes these matches smarter.</span>
+              <b>Want sharper results?</b>
+              <span className="small muted">Take the 5-minute discovery quiz.</span>
             </div>
             <ArrowRight size={18} aria-hidden="true" className="finder-nudge-arrow" />
           </Link>

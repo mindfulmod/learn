@@ -17,6 +17,7 @@ import {
   Sparkles,
   Target,
   TrendingUp,
+  Volume2,
   X,
   type LucideIcon,
 } from 'lucide-react'
@@ -29,6 +30,7 @@ import { getStream } from '../data/streams'
 import { buildJourney, type Milestone } from '../engine/journey'
 import { careerFit, hasSignal } from '../engine/careers'
 import { buildProfile, type MasteryLevel } from '../engine/profile'
+import { modeFor, speak } from '../engine/mode'
 import { useStore } from '../store/store'
 import type { Profile, Trait } from '../types'
 import '../styles/preview.css'
@@ -40,6 +42,23 @@ const STEPS = [
   { kicker: 'Step 4 · Life in the job', icon: Building2 },
   { kicker: 'Step 5 · Your first step', icon: Flag },
 ] as const
+
+type StepKind = 'meet' | 'journey' | 'takes' | 'life' | 'first'
+const SENIOR_KINDS: StepKind[] = ['meet', 'journey', 'takes', 'life', 'first']
+
+/** Junior mode: three short steps (meet, journey, first step). */
+const JUNIOR_STEPS = [
+  { kicker: 'Step 1 · Meet the career', icon: Sparkles },
+  { kicker: 'Step 2 · Your journey', icon: MapPin },
+  { kicker: 'Step 3 · Your first step', icon: Flag },
+] as const
+const JUNIOR_KINDS: StepKind[] = ['meet', 'journey', 'first']
+
+/** First sentence of a text, for one-line summaries. */
+function firstSentence(text: string): string {
+  const m = text.match(/^.*?[.!?](?=\s|$)/)
+  return m ? m[0] : text
+}
 
 const KIND_HUE: Record<Milestone['kind'], number | null> = {
   now: null,
@@ -77,7 +96,12 @@ const LEVEL_TEXT: Record<MasteryLevel, { cls: string; text: string }> = {
 }
 
 /** Used when the student has not set up a profile yet, so the journey still renders. */
-const FALLBACK_PROFILE: Profile = { name: '', grade: 8, boardId: 'national', createdAt: '' }
+const FALLBACK_PROFILE: Profile = {
+  name: '',
+  grade: 8,
+  boardId: 'national',
+  createdAt: '',
+}
 
 function Section({ icon: Icon, title, children, hue }: { icon: LucideIcon; title: string; children: ReactNode; hue?: number }) {
   return (
@@ -117,6 +141,10 @@ export function FuturePreview({ careerId, onClose }: { careerId: string; onClose
   const bodyRef = useRef<HTMLDivElement>(null)
   const [step, setStep] = useState(0)
   const [justSet, setJustSet] = useState(false)
+  const [noVoice, setNoVoice] = useState(false)
+  const junior = modeFor(state.profile) === 'junior'
+  const steps: readonly { kicker: string; icon: LucideIcon }[] = junior ? JUNIOR_STEPS : STEPS
+  const kinds = junior ? JUNIOR_KINDS : SENIOR_KINDS
   const touchStart = useRef<{ x: number; y: number } | null>(null)
 
   const onCloseRef = useRef(onClose)
@@ -124,7 +152,7 @@ export function FuturePreview({ careerId, onClose }: { careerId: string; onClose
     onCloseRef.current = onClose
   }, [onClose])
 
-  const last = STEPS.length - 1
+  const last = steps.length - 1
   // Mark as previewed once per career.
   const markRef = useRef(markPreviewed)
   useEffect(() => {
@@ -192,25 +220,37 @@ export function FuturePreview({ careerId, onClose }: { careerId: string; onClose
   const isGoal = state.goals.includes(careerId)
   const topTraits = (Object.entries(career.traits) as [Trait, number][]).sort((a, b) => b[1] - a[1]).slice(0, 3)
   const pathway = career.pathways[profile.boardId]
-  const StepIcon = STEPS[step].icon
+  const safeStep = Math.min(step, last)
+  const kind = kinds[safeStep]
+  const StepIcon = steps[safeStep].icon
 
-  const headerTitle = [
-    career.title,
-    'Your journey',
-    'What it takes',
-    'Life in the job',
-    'Your first step',
-  ][step]
-
-  const headerLead = [
-    career.summary,
-    state.profile
-      ? `From grade ${profile.grade} today to an established ${shortTitle.toLowerCase()}. Here is how old you would be at each step.`
-      : `Imagining you are in grade ${profile.grade} today. Set up your profile for a timeline that fits you exactly.`,
-    'The subjects, strengths and skills this career leans on.',
-    'Where you would work, what it pays, and the honest truth.',
-    'You do not have to decide your whole life today. Just try one small thing.',
-  ][step]
+  const TITLES: Record<StepKind, string> = {
+    meet: career.title,
+    journey: 'Your journey',
+    takes: 'What it takes',
+    life: 'Life in the job',
+    first: 'Your first step',
+  }
+  const LEADS: Record<StepKind, string> = junior
+    ? {
+        meet: firstSentence(career.summary),
+        journey: 'How old you would be at each step.',
+        takes: '',
+        life: '',
+        first: 'Just try one small thing.',
+      }
+    : {
+        meet: career.summary,
+        journey: state.profile
+          ? `From grade ${profile.grade} today to an established ${shortTitle.toLowerCase()}. Here is how old you would be at each step.`
+          : `Imagining you are in grade ${profile.grade} today. Set up your profile for a timeline that fits you exactly.`,
+        takes: 'The subjects, strengths and skills this career leans on.',
+        life: 'Where you would work, what it pays, and the honest truth.',
+        first: 'You do not have to decide your whole life today. Just try one small thing.',
+      }
+  const headerTitle = TITLES[kind]
+  const headerLead = LEADS[kind]
+  const tryList = life ? life.tryIt.slice(0, junior ? 2 : 3) : []
 
   const setGoal = () => {
     setGoals([careerId, ...state.goals.filter((g) => g !== careerId)])
@@ -240,9 +280,42 @@ export function FuturePreview({ careerId, onClose }: { careerId: string; onClose
 
   const studyYears = life ? life.yearsOfStudy + (life.training?.years ?? 0) : null
 
+  const readAloud = () => {
+    let main: string
+    if (kind === 'meet') main = `${headerLead} ${life ? life.dayStory : career.dayInLife}`
+    else if (kind === 'journey') main = `${headerLead} ${journey.map((m) => `Age ${m.age}: ${m.title}.`).join(' ')}`
+    else main = `${headerLead} ${tryList.join('. ')}`
+    setNoVoice(!speak(`${headerTitle}. ${main}`))
+  }
+
   // ---------- Step content ----------
   let content: ReactNode
-  if (step === 0) {
+  if (kind === 'meet' && junior) {
+    content = (
+      <>
+        {life && (
+          <div className="fp-facts fp-facts-junior">
+            <div className="fp-fact" style={tint(215)}>
+              <span className="fp-fact-icon" aria-hidden="true">
+                <GraduationCap size={18} strokeWidth={2.3} />
+              </span>
+              <b>{studyYears} years of study</b>
+            </div>
+            <div className="fp-fact" style={tint(160)}>
+              <span className="fp-fact-icon" aria-hidden="true">
+                <TrendingUp size={18} strokeWidth={2.3} />
+              </span>
+              <b className="fp-demand-text">{life.demand} demand</b>
+            </div>
+          </div>
+        )}
+        <figure className="fp-story">
+          <figcaption className="kicker">A day in your life</figcaption>
+          <blockquote>{life ? life.dayStory : career.dayInLife}</blockquote>
+        </figure>
+      </>
+    )
+  } else if (kind === 'meet') {
     content = (
       <>
         {life && (
@@ -289,10 +362,11 @@ export function FuturePreview({ careerId, onClose }: { careerId: string; onClose
         )}
       </>
     )
-  } else if (step === 1) {
+  } else if (kind === 'journey') {
     content = (
-      <ol className="fp-journey">
+      <ol className={`fp-journey ${junior ? 'fp-journey-junior' : ''}`}>
         {journey.map((m, i) => {
+          const showDetail = !junior || i === 0 || i === journey.length - 1
           const hue = KIND_HUE[m.kind]
           const style: CSSProperties | undefined = hue !== null ? tint(hue) : undefined
           return (
@@ -302,27 +376,29 @@ export function FuturePreview({ careerId, onClose }: { careerId: string; onClose
                 <b>{m.age}</b>
               </div>
               <div className="fp-milestone-body">
-                <div className="fp-milestone-meta">
-                  {i === 0 ? (
-                    <span className="badge primary">
-                      <MapPin size={12} strokeWidth={2.6} aria-hidden="true" /> You are here
-                    </span>
-                  ) : (
-                    <span className="fp-when">
-                      <Hourglass size={12} strokeWidth={2.6} aria-hidden="true" /> {inYears(m.yearsFromNow)}
-                    </span>
-                  )}
-                  {i !== 0 && <span className="badge tinted">{KIND_LABEL[m.kind]}</span>}
-                </div>
+                {(!junior || i === 0) && (
+                  <div className="fp-milestone-meta">
+                    {i === 0 ? (
+                      <span className="badge primary">
+                        <MapPin size={12} strokeWidth={2.6} aria-hidden="true" /> You are here
+                      </span>
+                    ) : (
+                      <span className="fp-when">
+                        <Hourglass size={12} strokeWidth={2.6} aria-hidden="true" /> {inYears(m.yearsFromNow)}
+                      </span>
+                    )}
+                    {i !== 0 && <span className="badge tinted">{KIND_LABEL[m.kind]}</span>}
+                  </div>
+                )}
                 <h3>{m.title}</h3>
-                <p>{m.detail}</p>
+                {showDetail && <p>{m.detail}</p>}
               </div>
             </li>
           )
         })}
       </ol>
     )
-  } else if (step === 2) {
+  } else if (kind === 'takes') {
     content = (
       <>
         {fit && (
@@ -406,7 +482,11 @@ export function FuturePreview({ careerId, onClose }: { careerId: string; onClose
                           <span className="small muted">{Math.round(mine)}%</span>
                         </div>
                         <div className="bar fp-minibar fp-you" role="progressbar" aria-valuenow={Math.round(mine)} aria-valuemin={0} aria-valuemax={100} aria-label={`Your ${TRAIT_NAMES[t]} score`}>
-                          <span style={{ width: `${Math.max(0, Math.min(100, mine))}%` }} />
+                          <span
+                            style={{
+                              width: `${Math.max(0, Math.min(100, mine))}%`,
+                            }}
+                          />
                         </div>
                       </>
                     )}
@@ -434,7 +514,7 @@ export function FuturePreview({ careerId, onClose }: { careerId: string; onClose
         )}
       </>
     )
-  } else if (step === 3) {
+  } else if (kind === 'life') {
     content = (
       <>
         {life && (
@@ -507,10 +587,10 @@ export function FuturePreview({ careerId, onClose }: { careerId: string; onClose
     const high = getStream(pathway?.higherSecondary)?.name ?? pathway?.higherSecondary
     content = (
       <>
-        {life && life.tryIt.length > 0 && (
+        {tryList.length > 0 && (
           <Section icon={Lightbulb} title="Try it this month" hue={45}>
             <ul className="fp-try">
-              {life.tryIt.slice(0, 3).map((t, i) => (
+              {tryList.map((t, i) => (
                 <li key={t} style={{ animationDelay: `${i * 80}ms` }}>
                   <span className="fp-try-num" aria-hidden="true">
                     {i + 1}
@@ -522,7 +602,7 @@ export function FuturePreview({ careerId, onClose }: { careerId: string; onClose
           </Section>
         )}
 
-        {pathway && (
+        {pathway && !junior && (
           <Section icon={MapPin} title="Your path through school" hue={215}>
             <div className="fp-path">
               <div className="fp-path-step">
@@ -555,7 +635,7 @@ export function FuturePreview({ careerId, onClose }: { careerId: string; onClose
           ) : (
             <>
               <h3>Could this be you?</h3>
-              <p className="small muted">You can change your goal any time. Setting one just gives you a roadmap to follow.</p>
+              <p className="small muted">{junior ? 'You can change your goal any time.' : 'You can change your goal any time. Setting one just gives you a roadmap to follow.'}</p>
               <div className="row">
                 {isGoal ? (
                   <span className="badge good fp-goal-badge">
@@ -595,49 +675,61 @@ export function FuturePreview({ careerId, onClose }: { careerId: string; onClose
           <div className="fp-glow one" aria-hidden="true" />
           <div className="fp-glow two" aria-hidden="true" />
           <div className="fp-progress" aria-hidden="true">
-            {STEPS.map((_, i) => (
-              <span key={i} className={i <= step ? 'done' : ''} />
+            {steps.map((_, i) => (
+              <span key={i} className={i <= safeStep ? 'done' : ''} />
             ))}
           </div>
           <button className="fp-close" onClick={onClose} aria-label="Close preview">
             <X size={20} strokeWidth={2.6} />
           </button>
-          <div className="fp-header-main" key={step}>
+          <div className="fp-header-main" key={safeStep}>
             <div className="fp-hero-tile" aria-hidden="true">
-              {step === 0 ? <ClusterIcon size={40} strokeWidth={2} /> : <StepIcon size={36} strokeWidth={2.1} />}
+              {safeStep === 0 ? <ClusterIcon size={40} strokeWidth={2} /> : <StepIcon size={36} strokeWidth={2.1} />}
             </div>
             <div className="fp-header-text">
-              <span className="fp-kicker">{step === 0 ? `Step 1 · Meet the ${shortTitle.toLowerCase()}` : STEPS[step].kicker}</span>
-              {step === 0 && <span className="fp-cluster-badge">{CLUSTER_NAMES[career.cluster]}</span>}
+              <span className="fp-kicker">{safeStep === 0 ? `Step 1 · Meet the ${shortTitle.toLowerCase()}` : steps[safeStep].kicker}</span>
+              {safeStep === 0 && <span className="fp-cluster-badge">{CLUSTER_NAMES[career.cluster]}</span>}
               <h2 id={titleId}>{headerTitle}</h2>
               <p>{headerLead}</p>
+              {junior && (
+                <>
+                  <button className="btn sm fp-read" onClick={readAloud}>
+                    <Volume2 size={16} aria-hidden="true" /> Read aloud
+                  </button>
+                  {noVoice && (
+                    <span className="fp-no-voice" role="status">
+                      Read-aloud is not available on this device
+                    </span>
+                  )}
+                </>
+              )}
             </div>
           </div>
         </header>
 
         <div className="fp-body" ref={bodyRef}>
-          <div className="fp-step" key={step}>
+          <div className="fp-step" key={safeStep}>
             {content}
           </div>
         </div>
 
         <footer className="fp-footer">
-          <button className="btn" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0} aria-label="Previous step">
+          <button className="btn" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={safeStep === 0} aria-label="Previous step">
             <ChevronLeft size={18} aria-hidden="true" /> <span className="fp-btn-text">Back</span>
           </button>
           <div className="fp-dots" role="tablist" aria-label="Steps">
-            {STEPS.map((s, i) => (
+            {steps.map((s, i) => (
               <button
                 key={i}
                 role="tab"
-                aria-selected={i === step}
+                aria-selected={i === safeStep}
                 aria-label={s.kicker}
-                className={`fp-dot ${i === step ? 'active' : ''} ${i < step ? 'seen' : ''}`}
+                className={`fp-dot ${i === safeStep ? 'active' : ''} ${i < safeStep ? 'seen' : ''}`}
                 onClick={() => setStep(i)}
               />
             ))}
           </div>
-          {step < last ? (
+          {safeStep < last ? (
             <button className="btn primary" onClick={() => setStep((s) => Math.min(last, s + 1))} aria-label="Next step">
               <span className="fp-btn-text">Next</span> <ChevronRight size={18} aria-hidden="true" />
             </button>

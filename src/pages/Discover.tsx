@@ -1,14 +1,16 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Frown, Heart, Laugh, Meh, Smile } from 'lucide-react'
+import { Eye, Frown, Heart, Laugh, Meh, Smile } from 'lucide-react'
 import { AREA_NAMES, DISCOVERY_QUESTIONS, LIKERT, TRAIT_BLURBS, TRAIT_NAMES } from '../data/discovery'
 import { rankCareers } from '../engine/careers'
 import { AREAS, scoreDiscovery, topTraits, TRAITS } from '../engine/discovery'
+import { modeFor } from '../engine/mode'
 import { buildProfile } from '../engine/profile'
 import { useStore } from '../store/store'
 import { IconTile, Meter } from '../components/ui'
 import { PageHeader } from '../components/PageHeader'
-import { AREA_META, TRAIT_META } from '../design'
+import { FuturePreview } from '../components/FuturePreview'
+import { AREA_META, CLUSTER_META, TRAIT_META, tint } from '../design'
 
 const PAGE = 6
 const FACES = [Frown, Meh, Smile, Laugh, Heart]
@@ -18,6 +20,8 @@ export function Discover() {
   const [answers, setAnswers] = useState<Record<string, number>>(state.discovery?.answers ?? {})
   const [page, setPage] = useState(0)
   const [showResult, setShowResult] = useState(!!state.discovery)
+  const [preview, setPreview] = useState<string | null>(null)
+  const junior = modeFor(state.profile) === 'junior'
   const pages = Math.ceil(DISCOVERY_QUESTIONS.length / PAGE)
   const slice = DISCOVERY_QUESTIONS.slice(page * PAGE, page * PAGE + PAGE)
   const answered = Object.keys(answers).length
@@ -35,14 +39,61 @@ export function Discover() {
   if (showResult && state.discovery) {
     const d = state.discovery
     const top = topTraits(d.traits, 2)
+    const retake = (
+      <button
+        className="btn"
+        onClick={() => {
+          setShowResult(false)
+          setPage(0)
+        }}
+      >
+        Retake the quiz
+      </button>
+    )
+    if (junior) {
+      return (
+        <>
+          <PageHeader themed hue={320} variant={2} kicker="Discovery" title="This is you" lead="What you like most, and careers to match." />
+          <div className="grid cols-2 section">
+            {top.map((t) => {
+              const meta = TRAIT_META[t]
+              return (
+                <div key={t} className="card pastel" style={tint(meta.hue)}>
+                  <IconTile hue={meta.hue} icon={meta.icon} large />
+                  <h2 style={{ margin: '12px 0 4px' }}>{TRAIT_NAMES[t]}</h2>
+                  <p style={{ margin: 0, color: 'var(--text-2)' }}>{TRAIT_BLURBS[t]}</p>
+                </div>
+              )
+            })}
+          </div>
+          <div className="card section">
+            <h3>Careers to try</h3>
+            <ul className="steps">
+              {ranked.map((r, i) => (
+                <li key={r.career.id} style={tint(CLUSTER_META[r.career.cluster].hue)}>
+                  <span className="num">{i + 1}</span>
+                  <span className="step-body">
+                    <Link to={`/careers/${r.career.id}`}>
+                      <b>{r.career.title}</b>
+                    </Link>
+                  </span>
+                  <button className="btn sm" onClick={() => setPreview(r.career.id)} aria-label={`Preview life as ${r.career.title}`}>
+                    <Eye size={16} aria-hidden="true" />
+                    Preview
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+          {retake}
+          {preview && <FuturePreview careerId={preview} onClose={() => setPreview(null)} />}
+        </>
+      )
+    }
     return (
       <>
-        <PageHeader
-          kicker="Discovery"
-          title="Your discovery profile"
-          lead={`Completed ${new Date(d.completedAt).toLocaleDateString()}. A starting picture of your interests; practice results refine it over time.`}
-        />
-        <div className="card accent section" style={{ display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+        <PageHeader themed hue={320} variant={2} kicker="Discovery" title="Your discovery profile" lead="A starting picture. Practice results sharpen it." />
+        <div className="card pastel section" style={{ display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
           <span className="row" style={{ gap: 8, flexWrap: 'nowrap' }}>
             <IconTile hue={TRAIT_META[top[0]].hue} icon={TRAIT_META[top[0]].icon} />
             <IconTile hue={TRAIT_META[top[1]].hue} icon={TRAIT_META[top[1]].icon} />
@@ -84,7 +135,7 @@ export function Discover() {
           </div>
           <div className="card">
             <h3>Learning areas</h3>
-            <p className="small muted">Blends your answers with any practice results.</p>
+            <p className="small muted">Grows as you practise.</p>
             <div className="stack">
               {[...AREAS]
                 .sort((a, b) => profile.areas[b] - profile.areas[a])
@@ -122,26 +173,14 @@ export function Discover() {
             See all careers ranked
           </Link>
         </div>
-        <button
-          className="btn"
-          onClick={() => {
-            setShowResult(false)
-            setPage(0)
-          }}
-        >
-          Retake the quiz
-        </button>
+        {retake}
       </>
     )
   }
 
   return (
     <>
-      <PageHeader
-        kicker="Discovery"
-        title="What suits you?"
-        lead={`For each statement, choose how much it sounds like you. No right answers. ${DISCOVERY_QUESTIONS.length} statements, about 5 minutes.`}
-      />
+      <PageHeader themed hue={320} variant={2} kicker="Discovery" title="What suits you?" lead={`How much is each one like you? ${DISCOVERY_QUESTIONS.length} statements, no wrong answers.`} />
       <div className="progress-steps" aria-label={`Page ${page + 1} of ${pages}`}>
         {Array.from({ length: pages }).map((_, i) => (
           <span key={i} className={i <= page ? 'done' : ''} />

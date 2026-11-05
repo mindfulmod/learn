@@ -99,3 +99,39 @@
 .missions.roomy a { min-height: 48px; }
 .badge-tile .tile-icon { width: 44px; height: 44px; }
 .recent-list li { gap: 6px; }
+
+/* ---------- Junior subject picker -------------------------------------- */
+.junior-courses .course-tile .course-body { padding-right: 0; }
+.junior-courses .course-body h3 { font-size: 1.22rem; }
+.junior-courses .course-status { font-size: 0.92rem; font-weight: 600; color: var(--tint-strong); }
+
+/* ---------- Lesson step ------------------------------------------------- */
+.quiz-top-spacer { width: 1px; }
+.lesson-card { padding: 24px; display: flex; flex-direction: column; gap: 4px; }
+@media (max-width: 480px) { .lesson-card { padding: 18px; } }
+.lesson-kicker { display: inline-flex; align-items: center; gap: 6px; color: var(--tint-strong); }
+.lesson-card h2 { font-size: 1.45rem; margin: 6px 0 8px; overflow-wrap: anywhere; }
+.lesson-idea { font-size: 1.08rem; line-height: 1.75; margin: 0 0 12px; overflow-wrap: anywhere; }
+.lesson-example { padding: 16px 18px; margin: 4px 0 6px; }
+.lesson-example h4 { margin: 0 0 6px; color: var(--tint-strong); font-size: 0.9rem; }
+.lesson-example p { margin: 0; line-height: 1.65; overflow-wrap: anywhere; }
+.lesson-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.lesson-actions .btn { min-height: 52px; display: inline-flex; align-items: center; gap: 8px; }
+.lesson-actions .btn.primary { flex: 1 1 200px; justify-content: center; max-width: 280px; }
+@media (max-width: 480px) { .lesson-actions .btn { flex: 1 1 100%; max-width: none; justify-content: center; } }
+.lesson-note { margin: 8px 0 0; }
+
+/* ---------- Junior quiz ------------------------------------------------- */
+.quiz-of { font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.quiz-question { display: flex; align-items: flex-start; gap: 10px; }
+.quiz-question h2 { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.quiz-speak { flex-shrink: 0; width: 44px; min-width: 44px; min-height: 44px; padding: 0; display: grid; place-items: center; margin-top: 4px; }
+.progress-steps.dots { justify-content: center; gap: 8px; }
+.progress-steps.dots span { flex: 0 0 12px; width: 12px; height: 12px; }
+
+/* ---------- Junior results --------------------------------------------- */
+.junior-result .big-score { font-size: clamp(2.6rem, 12vw, 3.6rem); }
+.junior-result .result-verdict { font-size: 1.2rem; font-weight: 600; }
+.result-details { margin-top: 20px; }
+.result-details summary { cursor: pointer; font-weight: 700; color: var(--text-2); min-height: 44px; display: flex; align-items: center; }
+.result-details .section { margin-top: 8px; }

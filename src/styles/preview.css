@@ -231,3 +231,20 @@
   }
   .fp-progress span::after, .fp-dot, .fp-close, .fp-milestone-body { transition: none !important; }
 }
+
+/* ---------- Junior variant --------------------------------------------- */
+.fp-facts.fp-facts-junior { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.fp-facts-junior .fp-fact { flex-direction: row; align-items: center; gap: 12px; }
+.fp-facts-junior .fp-fact-icon { margin-bottom: 0; flex-shrink: 0; }
+.fp-facts-junior .fp-fact b { font-size: 1.05rem; line-height: 1.25; min-width: 0; overflow-wrap: anywhere; }
+.fp-demand-text::first-letter { text-transform: uppercase; }
+@media (max-width: 480px) { .fp-facts.fp-facts-junior { grid-template-columns: 1fr; } }
+.fp-journey-junior .fp-milestone-body h3 { font-size: 1.08rem; margin: 0; }
+.fp-journey-junior .fp-milestone.here .fp-milestone-body h3,
+.fp-journey-junior .fp-milestone:last-child .fp-milestone-body h3 { margin-bottom: 4px; }
+.fp-read {
+  margin-top: 12px; display: inline-flex; align-items: center; gap: 6px; min-height: 40px;
+  background: rgb(255 255 255 / 0.2); border-color: rgb(255 255 255 / 0.35); color: #fff;
+}
+.fp-read:hover { background: rgb(255 255 255 / 0.32); }
+.fp-no-voice { display: block; margin-top: 6px; font-size: 0.8rem; color: rgb(255 255 255 / 0.85); }

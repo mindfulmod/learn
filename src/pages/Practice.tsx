@@ -91,9 +91,7 @@ export function Practice() {
               </Ring>
               <div className="course-body">
                 <h3>{subjectName(id)}</h3>
-                <span className="course-status">
-                  {junior ? JUNIOR_STATUS[s?.level ?? 'not-practised'] : s ? `${s.attempts} round${s.attempts === 1 ? '' : 's'} · ${s.accuracy}%` : 'Not started'}
-                </span>
+                <span className="course-status">{junior ? JUNIOR_STATUS[s?.level ?? 'not-practised'] : s ? `${s.attempts} round${s.attempts === 1 ? '' : 's'} · ${s.accuracy}%` : 'Not started'}</span>
                 {must.has(id) && (
                   <span className="course-meta">
                     <span className="chip must">
@@ -125,13 +123,17 @@ function Quiz({ subjectId, band: initialBand }: { subjectId: string; band: Grade
   const nav = useNavigate()
   const loc = useLocation()
   const p = state.profile!
+  const junior = modeFor(state.profile) === 'junior'
   const navBand = (loc.state as { band?: GradeBand } | null)?.band
   const band = useMemo<GradeBand>(() => {
     // Prefer the band passed from the practice list, else the student's own band.
     return navBand ?? initialBand ?? bandForGrade(p.boardId, p.grade)
   }, [navBand, initialBand, p.boardId, p.grade])
 
+  const lesson = lessonFor(subjectId, band)
   const [items] = useState<QuizItem[]>(() => buildQuiz(subjectId, band, state.attempts))
+  const [inLesson, setInLesson] = useState(() => lesson !== undefined)
+  const [noVoice, setNoVoice] = useState(false)
   const [index, setIndex] = useState(0)
   const [answers, setAnswers] = useState<Record<string, number>>({})
   const [revealed, setRevealed] = useState(false)
@@ -154,6 +156,8 @@ function Quiz({ subjectId, band: initialBand }: { subjectId: string; band: Grade
   const chosen = item ? answers[item.id] : undefined
   const subject = subjectName(subjectId)
 
+  const readAloud = (text: string) => setNoVoice(!speak(text))
+
   if (!items.length) {
     return (
       <>
@@ -175,6 +179,98 @@ function Quiz({ subjectId, band: initialBand }: { subjectId: string; band: Grade
     const topicsMissed = [...new Set(wrong.map((w) => w.topic))]
     const allXp = totalXp(state)
     const level = levelFor(allXp)
+
+    const misses = wrong.length > 0 && (
+      <div className="section">
+        {!junior && <h3>Learn from the misses</h3>}
+        <div className="stack">
+          {wrong.map((w) => (
+            <div key={w.id} className="card">
+              <span className="kicker" style={{ display: 'block', marginBottom: 6 }}>
+                {w.topic}
+              </span>
+              <p>
+                <b className={URDU.test(w.question) ? 'urdu' : ''}>{w.question}</b>
+              </p>
+              <p className="small">
+                Your answer: <span className="miss-answer-bad">{answers[w.id] !== undefined ? w.options[answers[w.id]] : 'skipped'}</span>
+                <br />
+                Correct: <span className="miss-answer-good">{w.options[w.answer]}</span>
+              </p>
+              <p className="small" style={{ margin: 0 }}>
+                {w.explanation}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+
+    const actions = (
+      <div className="row result-actions">
+        <button className="btn primary" onClick={() => nav(0)}>
+          <RefreshCw size={18} aria-hidden="true" /> Another round
+        </button>
+        <Link to="/practice" className="btn">
+          Other subjects
+        </Link>
+        <Link to="/" className="btn">
+          Home
+        </Link>
+      </div>
+    )
+
+    if (junior) {
+      return (
+        <div className="junior-result">
+          <Confetti />
+          <div className="result-head">
+            <SubjectTile subjectId={subjectId} large />
+            <span className="big-score pop">
+              {correct}/{total}
+            </span>
+          </div>
+          <p className="lead result-verdict">
+            {pct >= 85 ? (
+              <>
+                <PartyPopper size={22} aria-hidden="true" />
+                Brilliant. You really know this.
+              </>
+            ) : pct >= 60 ? (
+              <>
+                <ThumbsUp size={22} aria-hidden="true" />
+                Good work. Nearly there.
+              </>
+            ) : (
+              <>
+                <Dumbbell size={22} aria-hidden="true" />
+                Good try. Practice makes it easier.
+              </>
+            )}
+          </p>
+          {topicsMissed.length > 0 && (
+            <div className="card pastel section" style={tint(160)}>
+              <h4 style={{ marginTop: 0 }}>Topics to look at again</h4>
+              <div className="chips">
+                {topicsMissed.map((t) => (
+                  <span key={t} className="chip">
+                    {t}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          {actions}
+          {wrong.length > 0 && (
+            <details className="result-details">
+              <summary>Show my answers</summary>
+              {misses}
+            </details>
+          )}
+        </div>
+      )
+    }
+
     return (
       <>
         <Celebrate xp={xp} label={`${correct}/${total} in ${subject}`} />
@@ -237,42 +333,62 @@ function Quiz({ subjectId, band: initialBand }: { subjectId: string; band: Grade
           )}
         </div>
 
-        {wrong.length > 0 && (
-          <div className="section">
-            <h3>Learn from the misses</h3>
-            <div className="stack">
-              {wrong.map((w) => (
-                <div key={w.id} className="card">
-                  <span className="kicker" style={{ display: 'block', marginBottom: 6 }}>
-                    {w.topic}
-                  </span>
-                  <p>
-                    <b>{w.question}</b>
-                  </p>
-                  <p className="small">
-                    Your answer: <span className="miss-answer-bad">{answers[w.id] !== undefined ? w.options[answers[w.id]] : 'skipped'}</span>
-                    <br />
-                    Correct: <span className="miss-answer-good">{w.options[w.answer]}</span>
-                  </p>
-                  <p className="small" style={{ margin: 0 }}>
-                    {w.explanation}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        {misses}
+        {actions}
+      </>
+    )
+  }
 
-        <div className="row result-actions">
-          <button className="btn primary" onClick={() => nav(0)}>
-            <RefreshCw size={18} aria-hidden="true" /> Another round
-          </button>
-          <Link to="/practice" className="btn">
-            Other subjects
-          </Link>
-          <Link to="/" className="btn">
-            Home
-          </Link>
+  const quitButton = (
+    <Link to="/practice" className="btn sm" aria-label="Quit this round">
+      <X size={16} aria-hidden="true" /> Quit
+    </Link>
+  )
+  const quizTitle = (
+    <div className="quiz-title">
+      <b>{subject}</b>
+      <span>Grades {band}</span>
+    </div>
+  )
+
+  if (inLesson && lesson) {
+    const lessonUrdu = URDU.test(lesson.idea)
+    const startQuestions = () => {
+      start.current = Date.now()
+      setNoVoice(false)
+      setInLesson(false)
+    }
+    return (
+      <>
+        <div className="quiz-top">
+          {quitButton}
+          {quizTitle}
+          <span className="quiz-top-spacer" aria-hidden="true" />
+        </div>
+        <div className="card lesson-card pop" style={tint(160)}>
+          <span className="kicker lesson-kicker">
+            <BookOpen size={14} aria-hidden="true" /> {subject} · grades {band}
+          </span>
+          <h2 className={lessonUrdu ? 'urdu' : ''}>{lesson.title}</h2>
+          <p className={`lesson-idea ${lessonUrdu ? 'urdu' : ''}`}>{lesson.idea}</p>
+          <div className="card pastel lesson-example" style={tint(160)}>
+            <h4>A worked example</h4>
+            <p className={lessonUrdu ? 'urdu' : ''}>{lesson.example}</p>
+          </div>
+          <div className="lesson-actions">
+            <button className="btn primary" onClick={startQuestions}>
+              Try the questions <ArrowRight size={18} aria-hidden="true" />
+            </button>
+            <button className="btn" onClick={() => readAloud(`${lesson.title}. ${lesson.idea} ${lesson.example}`)}>
+              <Volume2 size={18} aria-hidden="true" /> Read it aloud
+            </button>
+          </div>
+          {noVoice && (
+            <p className="small muted lesson-note" role="status">
+              Read-aloud is not available on this device
+            </p>
+          )}
+          <p className="small muted lesson-note">Take your time. There is no timer.</p>
         </div>
       </>
     )
@@ -289,32 +405,37 @@ function Quiz({ subjectId, band: initialBand }: { subjectId: string; band: Grade
   const check = () => setRevealed(true)
   const next = () => {
     setRevealed(false)
+    setNoVoice(false)
     if (index + 1 >= items.length) setResult(summariseAttempt(subjectId, band, items, answers, Math.round((Date.now() - start.current) / 1000)))
     else setIndex(index + 1)
   }
+  const isRight = chosen === item.answer
 
   return (
     <>
       <div className="quiz-top">
-        <Link to="/practice" className="btn sm" aria-label="Quit this round">
-          <X size={16} aria-hidden="true" /> Quit
-        </Link>
-        <div className="quiz-title">
-          <b>{subject}</b>
-          <span>Grades {band}</span>
+        {quitButton}
+        {quizTitle}
+        {junior ? (
+          <span className="stat-chip quiz-of" aria-live="polite">
+            {index + 1} of {items.length}
+          </span>
+        ) : (
+          <span className="stat-chip xp quiz-xp" aria-live="polite" aria-label={`${liveXp} XP this round`}>
+            <Sparkles size={16} aria-hidden="true" />
+            <b key={liveXp} className={liveXp ? 'bump' : ''}>
+              {liveXp}
+            </b>
+            XP
+          </span>
+        )}
+      </div>
+      {!junior && (
+        <div className="quiz-count">
+          {index + 1} / {items.length}
         </div>
-        <span className="stat-chip xp quiz-xp" aria-live="polite" aria-label={`${liveXp} XP this round`}>
-          <Sparkles size={16} aria-hidden="true" />
-          <b key={liveXp} className={liveXp ? 'bump' : ''}>
-            {liveXp}
-          </b>
-          XP
-        </span>
-      </div>
-      <div className="quiz-count">
-        {index + 1} / {items.length}
-      </div>
-      <div className="progress-steps" aria-hidden="true">
+      )}
+      <div className={`progress-steps ${junior ? 'dots' : ''}`} aria-hidden="true">
         {items.map((it, i) => (
           <span key={it.id} className={i < index || (i === index && revealed) ? 'done' : ''} />
         ))}
@@ -322,9 +443,26 @@ function Quiz({ subjectId, band: initialBand }: { subjectId: string; band: Grade
       <div className="card quiz-card">
         <div className="row" style={{ gap: 8 }}>
           <span className="badge primary">{item.topic}</span>
-          <span className={`badge ${['good', 'warn', 'bad'][item.difficulty - 1]}`}>{['Easy', 'Medium', 'Hard'][item.difficulty - 1]}</span>
+          {!junior && <span className={`badge ${['good', 'warn', 'bad'][item.difficulty - 1]}`}>{['Easy', 'Medium', 'Hard'][item.difficulty - 1]}</span>}
         </div>
-        <h2 className={URDU.test(item.question) ? 'urdu' : ''}>{item.question}</h2>
+        <div className="quiz-question">
+          <h2 className={URDU.test(item.question) ? 'urdu' : ''}>{item.question}</h2>
+          {junior && (
+            <button
+              className="btn sm quiz-speak"
+              onClick={() => readAloud(`${item.question} ${item.options.map((o, i) => `${LETTERS[i]}: ${o}.`).join(' ')}`)}
+              aria-label="Read the question aloud"
+              title="Read aloud"
+            >
+              <Volume2 size={20} aria-hidden="true" />
+            </button>
+          )}
+        </div>
+        {junior && noVoice && (
+          <p className="small muted lesson-note" role="status">
+            Read-aloud is not available on this device
+          </p>
+        )}
         <div className="choices">
           {item.options.map((opt, i) => {
             let cls = 'choice quiz-choice'
@@ -343,10 +481,10 @@ function Quiz({ subjectId, band: initialBand }: { subjectId: string; band: Grade
           })}
         </div>
         {revealed && (
-          <div className={`explain pop ${chosen === item.answer ? 'ok' : 'no'}`}>
+          <div className={`explain pop ${isRight ? 'ok' : 'no'}`}>
             <b>
-              {chosen === item.answer ? <Check size={16} className="inline-icon" aria-hidden="true" /> : <Lightbulb size={16} className="inline-icon" aria-hidden="true" />}
-              {chosen === item.answer ? `Correct! +${XP.correct} XP` : `Not quite. +${XP.attempted} XP for trying.`}
+              {isRight ? <Check size={16} className="inline-icon" aria-hidden="true" /> : <Lightbulb size={16} className="inline-icon" aria-hidden="true" />}
+              {junior ? (isRight ? 'Correct!' : 'Not quite.') : isRight ? `Correct! +${XP.correct} XP` : `Not quite. +${XP.attempted} XP for trying.`}
             </b>{' '}
             {item.explanation}
           </div>

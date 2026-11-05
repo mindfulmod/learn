@@ -8,6 +8,18 @@ import { useStore } from '../store/store'
 import { Orb } from '../components/Orb'
 import type { BoardId } from '../types'
 
+/** One-line board notes; the full descriptions are too long for a helper line. */
+const BOARD_NOTE: Record<BoardId, string> = {
+  national: 'Matric and Inter, under FBISE or a provincial board.',
+  cambridge: 'O Level and A Level, with IBCC equivalence.',
+  akueb: 'Aga Khan board, with SSC and HSSC exams.',
+}
+
+function firstSentence(text: string): string {
+  const i = text.indexOf('. ')
+  return i === -1 ? text : text.slice(0, i + 1)
+}
+
 export function Onboarding() {
   const { state, setProfile, setGoals } = useStore()
   const nav = useNavigate()
@@ -64,7 +76,7 @@ export function Onboarding() {
               <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Ayesha" autoFocus maxLength={40} />
             </label>
             <label className="field">
-              <span>Which board or system do you study under?</span>
+              <span>Your board or system</span>
               <select
                 value={boardId}
                 onChange={(e) => {
@@ -81,7 +93,7 @@ export function Onboarding() {
                 ))}
               </select>
             </label>
-            <p className="small muted">{getBoard(boardId).description}</p>
+            <p className="small muted">{BOARD_NOTE[boardId]}</p>
             <button className="btn primary block" disabled={!name.trim()} onClick={() => setStep(1)}>
               Next
             </button>
@@ -111,17 +123,17 @@ export function Onboarding() {
             {needsStream && (
               <>
                 <h3>Which group or stream?</h3>
-                <p className="small muted">Pick the one you are in, or the one you are planning. You can change this later.</p>
+                <p className="small muted">Pick yours, or the one you plan. Change it any time.</p>
                 <div className="choices" style={{ marginBottom: 16 }}>
                   {streams.map((s) => (
                     <button key={s.id} className={`choice ${streamId === s.id ? 'selected' : ''}`} onClick={() => setStreamId(s.id)}>
                       <strong>{s.name}</strong>
-                      <span className="small muted">{s.description}</span>
+                      <span className="small muted">{firstSentence(s.description)}</span>
                     </button>
                   ))}
                   <button className={`choice ${streamId === undefined ? 'selected' : ''}`} onClick={() => setStreamId(undefined)}>
                     <strong>Not decided yet</strong>
-                    <span className="small muted">We will suggest one based on your goal.</span>
+                    <span className="small muted">We will suggest one from your goal.</span>
                   </button>
                 </div>
               </>
@@ -142,13 +154,13 @@ export function Onboarding() {
           <div className="card">
             <span className="kicker">Step 3 of 3</span>
             <h2>Do you have a career in mind?</h2>
-            <p className="small muted">Most people your age don't, and that is completely fine. Pick whichever is true for you.</p>
+            <p className="small muted">Most people your age don't. That is fine.</p>
             <div className="choices" style={{ marginBottom: 16 }}>
               <button className={`choice ${goalMode === 'has' ? 'selected' : ''}`} onClick={() => setGoalMode('has')}>
                 <strong>
                   <Target size={16} className="inline-icon" aria-hidden="true" />I have one in mind
                 </strong>
-                <span className="small muted">Pick it and we will show you your path to it, year by year.</span>
+                <span className="small muted">See your path to it, year by year.</span>
               </button>
               <button
                 className={`choice ${goalMode === 'find' ? 'selected' : ''}`}
@@ -160,7 +172,7 @@ export function Onboarding() {
                 <strong>
                   <Compass size={16} className="inline-icon" aria-hidden="true" />Help me find one
                 </strong>
-                <span className="small muted">Play a 3-minute game of "would you rather" and see three futures that fit you.</span>
+                <span className="small muted">A 3-minute game shows three futures.</span>
               </button>
             </div>
             {goalMode === 'has' && (
@@ -205,7 +217,7 @@ export function Onboarding() {
 
         <p className="small muted" style={{ marginTop: 20, textAlign: 'center' }}>
           <Lock size={14} className="inline-icon" aria-hidden="true" />
-          Everything is saved on this device only. No account, no uploads.
+          Saved on this device only. No account, no uploads.
         </p>
       </main>
     </div>

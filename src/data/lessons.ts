@@ -218,7 +218,8 @@ export const LESSONS: Lesson[] = [
     band: '11-12',
     title: 'Price elasticity of demand',
     idea: 'Price elasticity measures how strongly demand reacts to a price change: percentage change in quantity divided by percentage change in price. Above 1 is elastic, below 1 is inelastic. Necessities tend to be inelastic.',
-    example: 'Petrol rises 10% and sales fall 2%. Elasticity = 2 ÷ 10 = 0.2, which is inelastic: people still need to drive. A 10% rise in cinema tickets cutting sales 25% gives 2.5, which is elastic.',
+    example:
+      'Petrol rises 10% and sales fall 2%. Elasticity = 2 ÷ 10 = 0.2, which is inelastic: people still need to drive. A 10% rise in cinema tickets cutting sales 25% gives 2.5, which is elastic.',
   },
 
   // ---------------------------------------------------------- Accounting
