@@ -1,0 +1,50 @@
+/* =========================================================================
+   Today (Dashboard) and My Path: only what shell.css and index.css lack.
+   ========================================================================= */
+
+/* Bento tiles are cards; cancel the stacked-card margin and keep links flex. */
+.bento > .card { margin-top: 0; }
+.bento > a.tile { display: flex; color: inherit; }
+.bento > a.tile:hover { text-decoration: none; border-color: var(--border-strong); }
+.bento .tile h2, .bento .tile h3, .bento .tile b { overflow-wrap: anywhere; }
+@media (max-width: 759px) { .bento .wide-sm { grid-column: span 2; } }
+
+.tile .tile-label { display: inline-flex; align-items: center; gap: 6px; }
+.tile-foot { margin-top: auto; }
+.tile .hero-copy { display: flex; flex-direction: column; gap: 10px; max-width: 46ch; }
+
+/* First-visit guide strip */
+.guide-strip { display: flex; align-items: center; gap: 12px 20px; flex-wrap: wrap; margin-bottom: 16px; padding: 14px 18px; }
+.guide-strip h3 { margin: 0; font-size: 1rem; }
+.guide-steps { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1; min-width: 0; }
+.guide-steps a { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border-radius: 999px; background: var(--surface); color: var(--text); font-weight: 600; font-size: 0.88rem; }
+.guide-steps a:hover { text-decoration: none; box-shadow: var(--shadow-md); }
+.guide-steps .sep { color: var(--muted); }
+@media (max-width: 559px) { .guide-steps .sep { display: none; } }
+
+/* Level tile */
+.level-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.level-row > div { min-width: 0; flex: 1 1 90px; }
+
+/* Goal tile */
+.goal-head { display: flex; align-items: center; gap: 12px; }
+.goal-head > div { flex: 1; min-width: 0; }
+.goal-head h3 { line-height: 1.2; }
+.goal-subjects { display: flex; flex-wrap: wrap; gap: 6px; }
+.goal-subjects a { display: inline-flex; align-items: center; gap: 6px; padding: 4px 4px 4px 12px; border-radius: 999px; background: var(--surface-2); color: var(--text); font-weight: 600; font-size: 0.82rem; }
+.goal-subjects a:hover { text-decoration: none; }
+.goal-subjects .badge { font-size: 0.7rem; }
+.suggest-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.suggest-list li { display: flex; align-items: center; gap: 12px; }
+.suggest-list li b { flex: 1; min-width: 0; line-height: 1.25; }
+
+/* Strengths tile */
+.strength-meters { display: flex; flex-direction: column; gap: 10px; }
+.strength-meters .meter > span:first-child { display: inline-flex; align-items: center; gap: 6px; min-width: 0; font-size: 0.88rem; }
+
+/* My Path */
+.path-page .card h3 { display: flex; align-items: center; gap: 8px; }
+.path-page .stack > .card { margin-top: 0; }
+.path-groups { list-style: none; margin: 0 0 8px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.path-groups li { display: flex; flex-direction: column; gap: 2px; }
+.path-groups .small { color: var(--muted); }

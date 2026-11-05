@@ -13,6 +13,7 @@ import { buildProfile } from '../engine/profile'
 import { useStore } from '../store/store'
 import { IconTile, LevelBadge, ScoreRing } from '../components/ui'
 import { CLUSTER_META, tint } from '../design'
+import { PageHeader } from '../components/PageHeader'
 
 export function CareerDetail() {
   const { id } = useParams()
@@ -46,32 +47,37 @@ export function CareerDetail() {
 
   return (
     <>
-      <Link to="/careers" className="small">
-        <ArrowLeft size={14} className="inline-icon" aria-hidden="true" />
-        All careers
+      <Link to="/careers" className="small" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 40, fontWeight: 600 }}>
+        <ArrowLeft size={16} aria-hidden="true" />
+        Back to Explore
       </Link>
-      <div className="row between" style={{ marginTop: 10, marginBottom: 6, alignItems: 'flex-start' }}>
-        <div className="row" style={{ gap: 16, alignItems: 'flex-start' }}>
-          <IconTile hue={CLUSTER_META[career.cluster].hue} icon={CLUSTER_META[career.cluster].icon} large />
-          <div>
-            <span className="badge tinted" style={tint(CLUSTER_META[career.cluster].hue)}>
-              {CLUSTER_NAMES[career.cluster]}
-            </span>
-            <h1 style={{ marginTop: 6 }}>{career.title}</h1>
-          </div>
-        </div>
-        {fit && <ScoreRing value={fit.score} />}
-      </div>
-      <p className="lead">{career.summary}</p>
-      <div className="row section">
-        <button className="btn primary" onClick={() => setPreview(true)}>
-          <Eye size={18} aria-hidden="true" />
-          Peer into your future
-        </button>
+      <PageHeader
+        kicker={CLUSTER_NAMES[career.cluster]}
+        title={
+          <span className="row" style={{ gap: 14, flexWrap: 'nowrap', alignItems: 'center' }}>
+            <IconTile hue={CLUSTER_META[career.cluster].hue} icon={CLUSTER_META[career.cluster].icon} />
+            <span style={{ minWidth: 0, overflowWrap: 'anywhere' }}>{career.title}</span>
+          </span>
+        }
+        lead={career.summary}
+        action={
+          <button className="btn primary" onClick={() => setPreview(true)}>
+            <Eye size={18} aria-hidden="true" />
+            Peer into your future
+          </button>
+        }
+      />
+      <div className="row section" style={{ alignItems: 'center' }}>
         <button className="btn" onClick={toggleGoal}>
           {isGoal ? <Star size={18} fill="currentColor" aria-hidden="true" /> : <Target size={18} aria-hidden="true" />}
           {isGoal ? 'Remove from my goals' : state.goals.length ? 'Make this my main goal' : 'Set as my goal'}
         </button>
+        {fit && (
+          <span className="row" style={{ gap: 10, marginLeft: 'auto' }}>
+            <span className="small muted">Your fit</span>
+            <ScoreRing value={fit.score} />
+          </span>
+        )}
       </div>
       {preview && <FuturePreview careerId={career.id} onClose={closePreview} />}
 

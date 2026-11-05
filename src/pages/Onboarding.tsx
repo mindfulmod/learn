@@ -5,6 +5,7 @@ import { BOARD_GRADES, BOARDS, getBoard, gradeLabel, stageForGrade } from '../da
 import { CAREERS, CLUSTER_NAMES } from '../data/careers'
 import { streamsFor } from '../data/streams'
 import { useStore } from '../store/store'
+import { Orb } from '../components/Orb'
 import type { BoardId } from '../types'
 
 export function Onboarding() {
@@ -22,7 +23,6 @@ export function Onboarding() {
   const stage = stageForGrade(boardId, grade)
   const needsStream = stage === 'secondary' || stage === 'higher-secondary'
   const streams = needsStream ? streamsFor(boardId, stage) : []
-  const base = import.meta.env.BASE_URL
 
   const finish = () => {
     setProfile({
@@ -39,20 +39,15 @@ export function Onboarding() {
   const steps = ['About you', 'Your school', 'Your goal']
 
   return (
-    <div className="app">
-      <main style={{ maxWidth: 640 }}>
-        <div className="hero" style={{ marginBottom: 20, padding: '26px 22px' }}>
-          <div className="row" style={{ gap: 14 }}>
-            <img src={`${base}favicon.svg`} alt="" width={48} height={48} style={{ borderRadius: 14, boxShadow: '0 8px 20px rgb(0 0 0 / 0.25)' }} />
-            <div>
-              <h1 style={{ marginBottom: 2 }}>Rahnuma</h1>
-              <p style={{ margin: 0 }}>Your guide from here to the career you want.</p>
-            </div>
-          </div>
-          <span className="hero-art" aria-hidden="true" style={{ top: 14, bottom: 'auto' }}>
-            <Rocket size={72} strokeWidth={1.4} />
-          </span>
-        </div>
+    <div className="app" style={{ minHeight: '100dvh' }}>
+      <main style={{ maxWidth: 640, width: '100%', margin: '0 auto', padding: 'clamp(28px, 7vh, 64px) 16px 40px' }}>
+        <header style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: 28 }}>
+          <Orb hue={258} size={120} variant={0} />
+          <h1 style={{ margin: '14px 0 4px' }}>Rahnuma</h1>
+          <p className="lead" style={{ margin: 0 }}>
+            Your guide from here to the career you want.
+          </p>
+        </header>
 
         <div className="progress-steps" aria-label={`Step ${step + 1} of ${steps.length}`}>
           {steps.map((s, i) => (

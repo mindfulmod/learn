@@ -1,0 +1,102 @@
+/* =========================================================================
+   Practice (subject picker, quiz, results) and Progress pages.
+   ========================================================================= */
+
+/* ---------- Subject picker ---------------------------------------------- */
+.course-grid { margin-top: 4px; }
+.course-tile {
+  position: relative; display: flex !important; align-items: center; gap: 14px; padding: 18px; min-height: 96px;
+  overflow: hidden; isolation: isolate;
+}
+.course-tile::after {
+  content: ''; position: absolute; right: -40px; top: -40px; width: 120px; height: 120px; border-radius: 50%;
+  background: var(--tint-soft); z-index: -1; opacity: 0.8; transition: transform 0.3s ease;
+}
+.course-tile:hover::after { transform: scale(1.25); }
+.course-tile .ring-inner { color: var(--tint-strong); }
+.course-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.course-body h3 { margin: 0; font-size: 1.02rem; line-height: 1.2; }
+.course-status { font-size: 0.82rem; color: var(--text-2); }
+.course-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 2px; }
+.course-meta .chip { font-size: 0.72rem; padding: 3px 9px; display: inline-flex; align-items: center; gap: 4px; }
+.course-xp {
+  position: absolute; top: 10px; right: 10px; display: inline-flex; align-items: center; gap: 3px;
+  font-size: 0.68rem; font-weight: 800; padding: 2px 8px; border-radius: 999px;
+  background: var(--brand-soft); color: var(--brand-strong);
+}
+.course-tile .course-body { padding-right: 46px; }
+.practice-note { margin-top: 16px; }
+
+/* ---------- Quiz -------------------------------------------------------- */
+.quiz-top {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; margin-bottom: 12px;
+}
+.quiz-top .btn.sm { min-height: 40px; }
+.quiz-title { text-align: center; min-width: 0; display: flex; flex-direction: column; line-height: 1.2; }
+.quiz-title b { font-family: var(--font-display); font-size: 0.98rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.quiz-title span { font-size: 0.74rem; color: var(--muted); font-weight: 600; }
+.quiz-xp b { font-variant-numeric: tabular-nums; display: inline-block; }
+.quiz-xp b.bump { animation: xp-bump 0.45s cubic-bezier(0.2, 0.8, 0.2, 1.4); }
+@keyframes xp-bump { 0% { transform: scale(1); } 40% { transform: scale(1.35); } 100% { transform: scale(1); } }
+.quiz-count { display: flex; justify-content: flex-end; font-size: 0.78rem; font-weight: 700; color: var(--muted); margin-bottom: 4px; }
+
+.quiz-card { padding: 24px; }
+@media (max-width: 480px) { .quiz-card { padding: 18px; } }
+.quiz-card h2 { font-size: 1.3rem; margin: 6px 0 14px; }
+.quiz-choice { display: flex; align-items: center; gap: 12px; min-height: 56px; }
+.quiz-choice .choice-text { flex: 1; min-width: 0; }
+.choice-letter {
+  flex-shrink: 0; width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center;
+  font-family: var(--font-display); font-weight: 800; font-size: 0.85rem; color: #fff;
+  background: var(--tint-gradient); box-shadow: 0 6px 12px -6px var(--tint-glow);
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1.4);
+}
+.quiz-choice:hover:not(:disabled) .choice-letter { transform: rotate(-6deg) scale(1.08); }
+.quiz-choice.selected .choice-letter { transform: scale(1.12); }
+.quiz-choice.correct .choice-letter { background: var(--good); box-shadow: none; }
+.quiz-choice.wrong .choice-letter { background: var(--bad); box-shadow: none; }
+.quiz-actions { display: flex; gap: 10px; margin-top: 18px; }
+.quiz-actions .btn.primary { min-height: 52px; padding: 0 26px; flex: 1; max-width: 260px; }
+@media (max-width: 480px) { .quiz-actions .btn.primary { max-width: none; } }
+
+/* ---------- Results ----------------------------------------------------- */
+.result-head { display: flex; align-items: center; gap: 18px; margin-bottom: 8px; flex-wrap: wrap; }
+.result-verdict { display: flex; align-items: center; gap: 8px; }
+.earned-row { display: flex; align-items: center; gap: 14px; }
+.earned-row > div { display: flex; flex-direction: column; min-width: 0; }
+.earned-row b { font-family: var(--font-display); font-size: 1.1rem; }
+.earned-row span { font-size: 0.85rem; color: var(--text-2); }
+.miss-answer-bad { color: var(--bad); }
+.miss-answer-good { color: var(--good); }
+.result-actions { margin-top: 20px; }
+
+/* ---------- Progress ---------------------------------------------------- */
+.level-tile { flex-direction: row; align-items: center; gap: 20px; flex-wrap: wrap; }
+.level-tile .ring-inner { color: var(--brand-strong); }
+.level-tile-body { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 10px; }
+.level-tile-body h3 { font-size: 1.3rem; }
+.level-ladder { list-style: none; margin: 0; padding: 0 0 4px; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+.level-ladder::-webkit-scrollbar { display: none; }
+.level-ladder li {
+  flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 6px 10px;
+  border-radius: 12px; background: var(--surface-2); font-size: 0.74rem; line-height: 1.2;
+}
+.level-ladder li b { font-weight: 700; color: var(--text-2); }
+.level-ladder li span { color: var(--muted); font-size: 0.68rem; font-weight: 600; }
+.level-ladder li.reached b { color: var(--text); }
+.level-ladder li.current { background: var(--gradient-brand); box-shadow: 0 6px 14px -6px var(--brand-glow); }
+.level-ladder li.current b, .level-ladder li.current span { color: #fff; }
+
+.stat-tile .tile-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.stat-tile .tile-head svg { color: var(--tint-strong); }
+.stat-tile .stat-sub { font-size: 0.82rem; color: var(--text-2); margin: 0; }
+
+.progress-section { margin-top: 24px; }
+.progress-section > .card + .card { margin-top: 16px; }
+.card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+.card-head h3 { margin: 0; }
+.missions.roomy { gap: 12px; }
+.missions.roomy a { min-height: 48px; }
+.badge-tile .tile-icon { width: 44px; height: 44px; }
+.recent-list li { padding: 6px 0; }
+.recent-list li + li { border-top: 1px solid var(--border); }

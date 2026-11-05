@@ -9,6 +9,7 @@ import { buildProfile } from '../engine/profile'
 import { useStore } from '../store/store'
 import { FuturePreview } from '../components/FuturePreview'
 import { IconTile } from '../components/ui'
+import { PageHeader } from '../components/PageHeader'
 import type { CareerCluster } from '../types'
 
 export function Careers() {
@@ -25,26 +26,22 @@ export function Careers() {
 
   return (
     <>
-      <span className="kicker">Explore</span>
-      <h1>Careers</h1>
-      <p className="lead">
-        {signal
-          ? 'Ranked by how well each career matches what we know about you. Preview any of them to see your own path, year by year.'
-          : 'Browse careers and preview what each one would look like for you, year by year.'}
-      </p>
+      <PageHeader
+        kicker="Explore"
+        title="Careers"
+        lead={
+          signal
+            ? 'Ranked by how well each career fits what we know about you. Preview any of them to see your path, year by year.'
+            : 'Browse careers and preview what each one would look like for you, year by year.'
+        }
+        action={
+          <Link to="/finder" className="btn sm">
+            <Compass size={16} aria-hidden="true" />
+            {state.finder ? 'My matches' : 'Not sure? Try the finder'}
+          </Link>
+        }
+      />
 
-      {!state.finder && (
-        <Link to="/finder" className="card lift section" style={{ display: 'flex', gap: 14, alignItems: 'center', ...tint(320) }}>
-          <IconTile hue={320} icon={Compass} />
-          <span style={{ flex: 1 }}>
-            <b>Not sure what you want to be?</b>
-            <span className="small" style={{ display: 'block', color: 'var(--text-2)' }}>
-              Play the 3-minute Career Finder and we will show you three futures worth a look.
-            </span>
-          </span>
-          <span className="btn sm primary">Try it</span>
-        </Link>
-      )}
       {!signal && state.finder && (
         <Link to="/discover" className="btn" style={{ marginBottom: 20 }}>
           <Lightbulb size={18} aria-hidden="true" /> Sharpen these results with the discovery quiz
@@ -68,7 +65,8 @@ export function Careers() {
         })}
       </div>
 
-      <div className="grid cols-2">
+      {/* auto-fill: one column on phones, two on tablets, three on wide screens */}
+      <div className="grid cols-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))' }}>
         {visible.map(({ career, score }) => {
           const isGoal = state.goals.includes(career.id)
           const meta = CLUSTER_META[career.cluster]
@@ -84,7 +82,7 @@ export function Careers() {
                 if (e.key === 'Enter') nav(`/careers/${career.id}`)
               }}
               className="card lift career-card"
-              style={{ cursor: 'pointer', ...tint(meta.hue) }}
+              style={{ cursor: 'pointer', minWidth: 0, ...tint(meta.hue) }}
             >
               <div className="row between" style={{ alignItems: 'flex-start' }}>
                 <IconTile hue={meta.hue} icon={meta.icon} />
@@ -102,7 +100,7 @@ export function Careers() {
               <span className="badge tinted" style={{ marginBottom: 8 }}>
                 {CLUSTER_NAMES[career.cluster]}
               </span>
-              <h3>{career.title}</h3>
+              <h3 style={{ overflowWrap: 'anywhere' }}>{career.title}</h3>
               <p className="small" style={{ margin: '0 0 12px', color: 'var(--text-2)' }}>
                 {career.summary}
               </p>

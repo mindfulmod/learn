@@ -1,39 +1,80 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Compass, Eye, GraduationCap, Lightbulb, Puzzle, Rocket, Sparkles, Sun, Trophy, X } from 'lucide-react'
-import { getBoard, gradeLabel, stageForGrade } from '../data/boards'
+import { ArrowRight, Check, Clock, Compass, Eye, Flame, Map as MapIcon, Sparkles, Target, Trophy, X, Zap } from 'lucide-react'
 import { getCareer } from '../data/careers'
 import { TRAIT_NAMES } from '../data/discovery'
-import { getStream } from '../data/streams'
-import { subjectName } from '../data/subjects'
-import { CLUSTER_META, STAT_ICON, TRAIT_META, tint } from '../design'
-import { careerFit, rankCareers } from '../engine/careers'
+import { getSubject, subjectName } from '../data/subjects'
+import { AREA_META, CLUSTER_META, TRAIT_META, subjectIcon, tint } from '../design'
+import { careerFit, hasSignal, rankCareers } from '../engine/careers'
 import { topTraits } from '../engine/discovery'
 import { buildFeedback } from '../engine/feedback'
+import { scoreFinder } from '../engine/finder'
+import { buildJourney } from '../engine/journey'
 import { goalPlan } from '../engine/plan'
 import { buildProfile, streak } from '../engine/profile'
+import { levelFor, nextStep, totalXp, weeklyMissions, type NextStep } from '../engine/xp'
 import { useStore } from '../store/store'
-import { FeedbackCard, IconTile, LevelBadge, ScoreRing, SubjectTile } from '../components/ui'
+import type { Career } from '../types'
+import { PageHeader } from '../components/PageHeader'
+import { Ring } from '../components/Ring'
+import { Orb } from '../components/Orb'
+import { PathStrip } from '../components/PathStrip'
+import { FuturePreview } from '../components/FuturePreview'
+import { FeedbackCard, IconTile, LevelBadge, Meter, ScoreRing } from '../components/ui'
+import '../styles/home.css'
 
-const ART = [Rocket, GraduationCap, Compass, Sparkles, Trophy, Lightbulb]
+const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+const KIND_HUE: Record<Exclude<NextStep['kind'], 'practice'>, number> = { finder: 320, preview: 215, discovery: 45, goal: 258 }
+const KIND_VARIANT: Record<NextStep['kind'], number> = { practice: 0, finder: 1, preview: 2, discovery: 1, goal: 0 }
+const POPULAR = ['doctor', 'software-engineer', 'lawyer']
+
+function short(title: string): string {
+  return title.split(' (')[0]
+}
 
 export function Dashboard() {
   const { state } = useStore()
   const p = state.profile!
   const profile = useMemo(() => buildProfile(state), [state])
-  const feedback = useMemo(() => buildFeedback(state, profile), [state, profile])
+  const feedback = useMemo(() => buildFeedback(state, profile).slice(0, 3), [state, profile])
   const goal = state.goals[0] ? getCareer(state.goals[0]) : undefined
-  const plan = goal ? goalPlan(goal, p, profile) : null
-  const fit = goal ? careerFit(goal, state, profile) : null
-  const suggestions = useMemo(() => (state.discovery || state.attempts.length ? rankCareers(state, profile).slice(0, 3) : []), [state, profile])
+  const journey = useMemo(() => (goal ? buildJourney(goal, p) : null), [goal, p])
+  const plan = useMemo(() => (goal ? goalPlan(goal, p, profile) : null), [goal, p, profile])
+  const signal = hasSignal(state)
+  const fit = useMemo(() => (goal && signal ? careerFit(goal, state, profile) : null), [goal, signal, state, profile])
+  const suggestions = useMemo<Career[]>(() => {
+    if (goal) return []
+    if (signal) return rankCareers(state, profile).slice(0, 3).map((f) => f.career)
+    if (state.finder) return scoreFinder(state.finder, state, profile).careers.slice(0, 3).map((c) => c.career)
+    return POPULAR.map((id) => getCareer(id)).filter((c): c is Career => !!c)
+  }, [goal, signal, state, profile])
+  const step = useMemo(() => nextStep(state), [state])
+  const missions = useMemo(() => weeklyMissions(state), [state])
+  const xp = useMemo(() => totalXp(state), [state])
+  const level = levelFor(xp)
   const st = streak(state.activeDays)
-  const board = getBoard(p.boardId)
-  const stream = getStream(p.streamId)
-  const stage = stageForGrade(p.boardId, p.grade)
-  const [hour] = useState(() => new Date().getHours())
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
-  const Art = ART[(p.name.length + p.grade) % ART.length]
-  const strongCount = Object.values(profile.subjects).filter((s) => s.level === 'strong').length
+  const strengths = Object.values(profile.subjects)
+    .sort((a, b) => b.accuracy - a.accuracy)
+    .slice(0, 3)
+
+  const [now] = useState(() => {
+    const d = new Date()
+    const h = d.getHours()
+    const ms = d.getTime()
+    const week = Array.from({ length: 7 }, (_, i) => {
+      const key = new Date(ms - (6 - i) * 86400000).toISOString().slice(0, 10)
+      const wd = new Date(key + 'T00:00:00Z').getUTCDay()
+      return { key, letter: DAYS[wd].slice(0, 1), name: DAYS[wd] }
+    })
+    return {
+      kicker: `${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}`,
+      greeting: h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening',
+      week,
+      today: week[6].key,
+    }
+  })
+
   const [showGuide, setShowGuide] = useState(() => {
     try {
       return localStorage.getItem('rahnuma.guide') !== 'done'
@@ -46,254 +87,273 @@ export function Dashboard() {
     try {
       localStorage.setItem('rahnuma.guide', 'done')
     } catch {
-      // ignore
+      // Storage may be unavailable; the strip just reappears next visit.
     }
   }
 
+  const [preview, setPreview] = useState<string | null>(null)
+
+  const stepSubject = step.kind === 'practice' && step.subjectId ? getSubject(step.subjectId) : undefined
+  const stepHue = step.kind === 'practice' ? (stepSubject ? AREA_META[stepSubject.area].hue : 258) : KIND_HUE[step.kind]
+  const active = new Set(state.activeDays)
+  const doneCount = missions.filter((m) => m.done).length
+  const firstName = p.name.split(' ')[0]
+
   return (
     <>
-      <section className="hero section">
-        <span className="eyebrow">
-          <Sun size={14} className="inline-icon" aria-hidden="true" />
-          {greeting}
-        </span>
-        <h1>{p.name.split(' ')[0]}, let's build your path</h1>
-        <p>
-          {gradeLabel(p.boardId, p.grade)} · {board.shortName} · {stream ? stream.shortName : board.stageLabels[stage]}
-        </p>
-        <div className="row" style={{ marginTop: 6 }}>
-          <Link to="/practice" className="btn primary">
-            Practise today
-          </Link>
-          {!state.discovery && (
-            <Link to="/discover" className="btn ghost">
-              Discover your strengths
-            </Link>
-          )}
-        </div>
-        <span className="hero-art" aria-hidden="true">
-          <Art size={120} strokeWidth={1.4} />
-        </span>
-      </section>
+      <PageHeader kicker={now.kicker} title={`${now.greeting}, ${firstName}`} lead={goal ? `Aiming for ${short(goal.title)}` : "No goal yet. Let's find one."} />
 
       {showGuide && (
-        <section className="card accent section guide">
-          <div className="row between" style={{ marginBottom: 10 }}>
-            <h3 style={{ margin: 0 }}>How Rahnuma works</h3>
-            <button className="btn sm" onClick={dismissGuide} aria-label="Dismiss guide">
-              <X size={14} aria-hidden="true" /> Got it
-            </button>
+        <section className="card accent guide-strip" aria-label="How Rahnuma works">
+          <h3>How Rahnuma works</h3>
+          <div className="guide-steps">
+            <Link to="/finder">
+              <Compass size={18} aria-hidden="true" /> Find a direction
+            </Link>
+            <ArrowRight size={16} className="sep" aria-hidden="true" />
+            <Link to="/careers">
+              <Eye size={18} aria-hidden="true" /> Peer into the future
+            </Link>
+            <ArrowRight size={16} className="sep" aria-hidden="true" />
+            <Link to="/practice">
+              <Target size={18} aria-hidden="true" /> Train for it
+            </Link>
           </div>
-          <div className="grid cols-3">
-            <Link to="/finder" className="guide-step">
-              <IconTile hue={320} icon={Compass} />
-              <b>1. Find a direction</b>
-              <span className="small">Play the Career Finder or browse careers. No idea needed.</span>
+          <button className="btn sm" onClick={dismissGuide} aria-label="Dismiss guide">
+            <X size={14} aria-hidden="true" /> Got it
+          </button>
+        </section>
+      )}
+
+      <div className="bento section">
+        {/* 1. Next step */}
+        <section className="tile hero-tile span-2 row-2">
+          <Orb hue={stepHue} size={220} variant={KIND_VARIANT[step.kind]} />
+          <div className="hero-copy">
+            <span className="tile-label" style={{ color: 'rgb(255 255 255 / 0.85)' }}>
+              Next step
+            </span>
+            <h2>{step.title}</h2>
+            <p>{step.detail}</p>
+            <div className="hero-meta">
+              <span className="badge">
+                <Clock size={14} className="inline-icon" aria-hidden="true" />
+                {step.minutes} min
+              </span>
+              <span className="badge">
+                <Sparkles size={14} className="inline-icon" aria-hidden="true" />+{step.xp} XP
+              </span>
+            </div>
+            <Link to={step.to} className="btn primary">
+              {step.cta} <ArrowRight size={18} aria-hidden="true" />
             </Link>
-            <Link to="/careers" className="guide-step">
-              <IconTile hue={215} icon={Eye} />
-              <b>2. Peer into the future</b>
-              <span className="small">Preview any career year by year: what you study, when, what life looks like.</span>
-            </Link>
-            <Link to="/practice" className="guide-step">
-              <IconTile hue={160} icon={Puzzle} />
-              <b>3. Train for it</b>
-              <span className="small">Practise the subjects that matter. Your coach tells you what to work on.</span>
-            </Link>
+          </div>
+        </section>
+
+        {/* 2. Streak */}
+        <section className="card tile">
+          <span className="tile-label">
+            <Flame size={14} aria-hidden="true" /> Streak
+          </span>
+          <span className="big">
+            {st.current}
+            <small>{st.current === 1 ? 'day' : 'days'}</small>
+          </span>
+          <div className="streak-days" aria-label="Last seven days">
+            {now.week.map((d) => (
+              <span key={d.key} className={`${active.has(d.key) ? 'on' : ''} ${d.key === now.today ? 'today' : ''}`} title={`${d.name}${active.has(d.key) ? ', practised' : ''}`}>
+                {d.letter}
+              </span>
+            ))}
+          </div>
+          <span className="small muted tile-foot">{st.current >= 3 ? 'Keep the chain going' : st.current === 0 ? 'A round today restarts it' : 'Nice start'}</span>
+        </section>
+
+        {/* 3. Level */}
+        <Link to="/progress" className="card tile">
+          <span className="tile-label">
+            <Trophy size={14} aria-hidden="true" /> Level {level.index + 1}
+          </span>
+          <div className="level-row">
+            <Ring value={level.progress} size={72} stroke={7}>
+              <Zap size={22} aria-hidden="true" />
+            </Ring>
+            <div>
+              <h3>{level.name}</h3>
+              <span className="small muted">{level.next ? `${xp} XP · ${level.next - xp} to ${levelFor(level.next).name}` : `${xp} XP · Top level`}</span>
+            </div>
+          </div>
+        </Link>
+
+        {/* 4. Your path */}
+        <section className="card tile span-2">
+          <span className="tile-label">
+            <MapIcon size={14} aria-hidden="true" /> Your path
+          </span>
+          {journey ? (
+            <>
+              <PathStrip milestones={journey} compact to="/path" />
+              <span className="small muted">Tap to see every step</span>
+            </>
+          ) : (
+            <>
+              <p className="muted" style={{ margin: 0 }}>
+                Set a goal and your path appears here
+              </p>
+              <Link to="/finder" className="btn sm primary tile-foot" style={{ alignSelf: 'flex-start' }}>
+                <Compass size={16} aria-hidden="true" /> {state.finder ? 'See my matches' : 'Find a direction'}
+              </Link>
+            </>
+          )}
+        </section>
+
+        {/* 5. Goal */}
+        <section className="card tile span-2">
+          {goal && plan ? (
+            <>
+              <span className="tile-label">Your goal</span>
+              <div className="goal-head">
+                <IconTile hue={CLUSTER_META[goal.cluster].hue} icon={CLUSTER_META[goal.cluster].icon} />
+                <div>
+                  <h3>{goal.title}</h3>
+                  {plan.recommendedStreamName && (
+                    <span className="small muted">
+                      Group: {plan.recommendedStreamName}{' '}
+                      {plan.streamMatches === true && <span className="badge good">On track</span>}
+                      {plan.streamMatches === false && <span className="badge warn">Different from yours</span>}
+                    </span>
+                  )}
+                </div>
+                {fit && <ScoreRing value={fit.score} />}
+              </div>
+              <div className="goal-subjects" aria-label="Must-have subjects">
+                {plan.subjects
+                  .filter((s) => s.importance === 'must')
+                  .map((s) => (
+                    <Link key={s.subjectId} to={`/practice/${s.subjectId}`}>
+                      {s.name}
+                      <LevelBadge level={s.level} accuracy={s.accuracy} />
+                    </Link>
+                  ))}
+              </div>
+              <div className="row tile-foot">
+                <button className="btn sm primary" onClick={() => setPreview(goal.id)}>
+                  <Eye size={16} aria-hidden="true" /> Peer into your future
+                </button>
+                <Link to="/careers" className="btn sm">
+                  Change
+                </Link>
+              </div>
+            </>
+          ) : (
+            <>
+              <span className="tile-label">Futures to try</span>
+              <ul className="suggest-list">
+                {suggestions.map((c) => (
+                  <li key={c.id}>
+                    <IconTile hue={CLUSTER_META[c.cluster].hue} icon={CLUSTER_META[c.cluster].icon} />
+                    <b>{short(c.title)}</b>
+                    <button className="btn sm" onClick={() => setPreview(c.id)}>
+                      <Eye size={16} aria-hidden="true" /> Preview
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </section>
+
+        {/* 6. Missions */}
+        <section className="card tile wide-sm">
+          <span className="tile-label">
+            <Target size={14} aria-hidden="true" /> This week
+          </span>
+          <ul className="missions">
+            {missions.map((m) => (
+              <li key={m.id} className={m.done ? 'done' : ''}>
+                <Link to={m.to}>
+                  <span className={`mission-check ${m.done ? 'done' : ''}`}>
+                    <Check size={14} strokeWidth={3} aria-hidden="true" />
+                  </span>
+                  <span className="mission-text">
+                    <b>{m.title}</b>
+                    <span>{m.detail}</span>
+                  </span>
+                </Link>
+                <span className="badge primary">+{m.xp}</span>
+              </li>
+            ))}
+          </ul>
+          <span className="small muted tile-foot">
+            {doneCount}/{missions.length} done
+          </span>
+        </section>
+
+        {/* 7. Strengths */}
+        <section className="card tile wide-sm">
+          <span className="tile-label">
+            <Zap size={14} aria-hidden="true" /> Strengths
+          </span>
+          {state.discovery && (
+            <div className="chips">
+              {topTraits(state.discovery.traits, 2).map((t) => {
+                const TraitIcon = TRAIT_META[t].icon
+                return (
+                  <span key={t} className="chip tinted" style={tint(TRAIT_META[t].hue)}>
+                    <TraitIcon size={14} className="inline-icon" aria-hidden="true" />
+                    {TRAIT_NAMES[t]}
+                  </span>
+                )
+              })}
+            </div>
+          )}
+          {strengths.length ? (
+            <div className="strength-meters">
+              {strengths.map((s) => {
+                const Icon = subjectIcon(s.subjectId, s.area)
+                return (
+                  <Meter
+                    key={s.subjectId}
+                    label={
+                      <>
+                        <Icon size={14} aria-hidden="true" />
+                        {subjectName(s.subjectId)}
+                      </>
+                    }
+                    value={s.accuracy}
+                    tone="tinted"
+                    hue={AREA_META[s.area].hue}
+                  />
+                )
+              })}
+            </div>
+          ) : (
+            <>
+              <p className="small muted" style={{ margin: 0 }}>
+                Practise to build your profile
+              </p>
+              <Link to="/practice" className="small tile-foot">
+                Go to practice
+              </Link>
+            </>
+          )}
+        </section>
+      </div>
+
+      {feedback.length > 0 && (
+        <section className="section">
+          <div className="section-head">
+            <h2>Your coach says</h2>
+          </div>
+          <div className="coach-rail">
+            {feedback.map((f, i) => (
+              <FeedbackCard key={i} item={f} />
+            ))}
           </div>
         </section>
       )}
 
-      <div className="grid cols-3 section">
-        <div className="card stat" style={tint(28)}>
-          <span className="icon">
-            <STAT_ICON.streak size={22} />
-          </span>
-          <div>
-            <b>{st.current}</b>
-            <span>day streak{st.best > st.current ? ` · best ${st.best}` : ''}</span>
-          </div>
-        </div>
-        <div className="card stat" style={tint(215)}>
-          <span className="icon">
-            <STAT_ICON.questions size={22} />
-          </span>
-          <div>
-            <b>{profile.totalItems}</b>
-            <span>questions practised</span>
-          </div>
-        </div>
-        <div className="card stat" style={tint(160)}>
-          <span className="icon">
-            <STAT_ICON.strong size={22} />
-          </span>
-          <div>
-            <b>{strongCount}</b>
-            <span>strong subject{strongCount === 1 ? '' : 's'}</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid cols-2 section">
-        <section>
-          <div className="section-head">
-            <h2>Your goal</h2>
-            <Link to="/careers">{goal ? 'Change' : 'Choose'}</Link>
-          </div>
-          {goal && plan && fit ? (
-            <div className="card">
-              <div className="row between" style={{ marginBottom: 14 }}>
-                <div className="row" style={{ gap: 12 }}>
-                  <IconTile hue={CLUSTER_META[goal.cluster].hue} icon={CLUSTER_META[goal.cluster].icon} />
-                  <div>
-                    <h3 style={{ marginBottom: 2 }}>{goal.title}</h3>
-                    <span className="small muted">{plan.stageLabel} stage</span>
-                  </div>
-                </div>
-                <ScoreRing value={fit.score} />
-              </div>
-              <p className="small" style={{ color: 'var(--text-2)' }}>
-                {fit.score >= 70 ? 'Strong fit so far. Keep going.' : fit.score >= 50 ? 'Reasonable fit. Keep building the key subjects.' : 'Early days. Practise the must-have subjects to see where you stand.'}
-              </p>
-              {plan.recommendedStreamName && (
-                <p className="small">
-                  <b>Group to aim for:</b> {plan.recommendedStreamName}{' '}
-                  {plan.streamMatches === true && <span className="badge good">On track</span>}
-                  {plan.streamMatches === false && <span className="badge bad">Different from yours</span>}
-                </p>
-              )}
-              <h4 style={{ marginTop: 14 }}>Must-have subjects</h4>
-              <ul className="list">
-                {plan.subjects
-                  .filter((s) => s.importance === 'must')
-                  .map((s) => (
-                    <li key={s.subjectId} className="row between">
-                      <Link to={`/practice/${s.subjectId}`} style={{ fontWeight: 600 }}>
-                        {s.name}
-                      </Link>
-                      <LevelBadge level={s.level} accuracy={s.accuracy} />
-                    </li>
-                  ))}
-              </ul>
-              {plan.currentFocus.length > 0 && (
-                <>
-                  <h4 style={{ marginTop: 14 }}>Focus this stage</h4>
-                  <ul className="small" style={{ color: 'var(--text-2)' }}>
-                    {plan.currentFocus.map((f) => (
-                      <li key={f}>{f}</li>
-                    ))}
-                  </ul>
-                </>
-              )}
-              <div className="row" style={{ marginTop: 6 }}>
-                <Link to={`/careers/${goal.id}?preview=1`} className="btn sm primary">
-                  <Eye size={16} aria-hidden="true" /> Peer into your future
-                </Link>
-                <Link to={`/careers/${goal.id}`} className="btn sm">
-                  Full details <ArrowRight size={16} aria-hidden="true" />
-                </Link>
-              </div>
-            </div>
-          ) : (
-            <div className="card soft">
-              <div className="row" style={{ gap: 12, marginBottom: 10 }}>
-                <IconTile hue={258} icon={Compass} />
-                <h3 style={{ margin: 0 }}>No goal yet</h3>
-              </div>
-              <p className="small" style={{ color: 'var(--text-2)' }}>
-                A goal turns the curriculum into a roadmap: which group to choose, which subjects matter most, which tests to prepare for.
-              </p>
-              {suggestions.length > 0 ? (
-                <>
-                  <h4>Suggested for you</h4>
-                  <ul className="list">
-                    {suggestions.map((s) => (
-                      <li key={s.career.id} className="row between">
-                        <Link to={`/careers/${s.career.id}`} style={{ fontWeight: 600 }}>
-                          {(() => {
-                            const ClusterIcon = CLUSTER_META[s.career.cluster].icon
-                            return <ClusterIcon size={16} className="inline-icon" aria-hidden="true" />
-                          })()}
-                          {s.career.title}
-                        </Link>
-                        <span className="badge primary">{s.score}% fit</span>
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              ) : null}
-              <div className="row" style={{ marginTop: 12 }}>
-                <Link to="/finder" className="btn primary">
-                  <Compass size={18} aria-hidden="true" /> Help me find a career
-                </Link>
-                <Link to="/careers" className="btn">
-                  Browse careers
-                </Link>
-              </div>
-            </div>
-          )}
-        </section>
-
-        <section>
-          <div className="section-head">
-            <h2>Your strengths</h2>
-            <Link to="/progress">Details</Link>
-          </div>
-          <div className="card">
-            {state.discovery && (
-              <div className="chips" style={{ marginBottom: 14 }}>
-                {topTraits(state.discovery.traits, 2).map((t) => (
-                  <span key={t} className="chip tinted" style={tint(TRAIT_META[t].hue)}>
-                    {(() => {
-                      const TraitIcon = TRAIT_META[t].icon
-                      return <TraitIcon size={14} className="inline-icon" aria-hidden="true" />
-                    })()}
-                    {TRAIT_NAMES[t]}
-                  </span>
-                ))}
-              </div>
-            )}
-            {Object.keys(profile.subjects).length ? (
-              <ul className="list">
-                {Object.values(profile.subjects)
-                  .sort((a, b) => b.accuracy - a.accuracy)
-                  .slice(0, 5)
-                  .map((s) => (
-                    <li key={s.subjectId} className="row between">
-                      <span className="row" style={{ gap: 10 }}>
-                        <SubjectTile subjectId={s.subjectId} />
-                        <span style={{ fontWeight: 600 }}>
-                          {subjectName(s.subjectId)}
-                          {s.trend === 'up' && <span className="badge good" style={{ marginLeft: 6 }}>↑ improving</span>}
-                          {s.trend === 'down' && <span className="badge warn" style={{ marginLeft: 6 }}>↓ slipping</span>}
-                        </span>
-                      </span>
-                      <LevelBadge level={s.level} accuracy={s.accuracy} />
-                    </li>
-                  ))}
-              </ul>
-            ) : (
-              <div className="empty" style={{ padding: '18px 0 6px' }}>
-                <IconTile hue={160} icon={Puzzle} large />
-                <p className="small muted" style={{ margin: 0 }}>
-                  Practise a subject to start building your strength profile.
-                </p>
-              </div>
-            )}
-          </div>
-        </section>
-      </div>
-
-      <section className="section">
-        <div className="section-head">
-          <h2>Your coach says</h2>
-        </div>
-        <div className="stack">
-          {feedback.map((f, i) => (
-            <FeedbackCard key={i} item={f} />
-          ))}
-        </div>
-      </section>
+      {preview && <FuturePreview careerId={preview} onClose={() => setPreview(null)} />}
     </>
   )
 }

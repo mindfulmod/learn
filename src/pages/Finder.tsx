@@ -9,6 +9,8 @@ import { buildProfile } from '../engine/profile'
 import { useStore } from '../store/store'
 import { CLUSTER_META, tint } from '../design'
 import { FuturePreview } from '../components/FuturePreview'
+import { Orb } from '../components/Orb'
+import { PageHeader } from '../components/PageHeader'
 import type { Career, CareerCluster } from '../types'
 import '../styles/finder.css'
 
@@ -120,20 +122,22 @@ export function Finder() {
   // ---- A. Intro --------------------------------------------------------
   if (!state.finder && !started) {
     return (
-      <div className="finder">
-        <div className="hero finder-intro">
-          <span className="kicker finder-hero-kicker">Career finder</span>
-          <h1>Not sure what you want to be? Good.</h1>
-          <p className="lead">
-            Most people your age aren't. Answer 8 quick 'would you rather' questions and we'll show you three futures worth a look. No wrong
-            answers, and you can change your mind any time.
-          </p>
-          <button className="btn primary finder-play" onClick={() => setStarted(true)}>
-            <Sparkles size={18} aria-hidden="true" />
-            Let's play
-          </button>
-        </div>
+      <div className="finder finder-welcome">
+        <Orb hue={320} size={200} variant={1} />
+        <span className="kicker">Career finder</span>
+        <h1>Not sure what you want to be? Good.</h1>
+        <p className="lead">
+          Most people your age aren't. Answer 8 quick 'would you rather' questions and we'll show you three futures worth a look. No wrong
+          answers, and you can change your mind any time.
+        </p>
+        <button className="btn primary finder-play" onClick={() => setStarted(true)}>
+          <Sparkles size={18} aria-hidden="true" />
+          Let's play
+        </button>
         <p className="small muted finder-time">Takes about 3 minutes.</p>
+        <Link to="/" className="small finder-skip">
+          Skip to Today
+        </Link>
       </div>
     )
   }
@@ -211,9 +215,7 @@ export function Finder() {
         </div>
       )}
 
-      <span className="kicker">Your results</span>
-      <h1>Three futures worth a look</h1>
-      <p className="lead">Based on how you answered. These are starting points, not verdicts.</p>
+      <PageHeader kicker="Your results" title="Three futures worth a look" lead="Based on how you answered. These are starting points, not verdicts." />
 
       <div className="grid cols-3 section finder-results">
         {result.topClusters.map((c, rank) => {

@@ -6,6 +6,7 @@ import { Curriculum } from './pages/Curriculum'
 import { Dashboard } from './pages/Dashboard'
 import { Discover } from './pages/Discover'
 import { Finder } from './pages/Finder'
+import { Path } from './pages/Path'
 import { Onboarding } from './pages/Onboarding'
 import { Practice } from './pages/Practice'
 import { Progress } from './pages/Progress'
@@ -31,6 +32,7 @@ export default function App() {
         }
       >
         <Route index element={<Dashboard />} />
+        <Route path="path" element={<Path />} />
         <Route path="curriculum" element={<Curriculum />} />
         <Route path="careers" element={<Careers />} />
         <Route path="careers/:id" element={<CareerDetail />} />

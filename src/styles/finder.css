@@ -1,13 +1,17 @@
 /* ---------- Career Finder ---------------------------------------------- */
 .finder { max-width: 960px; margin: 0 auto; }
 
-/* Intro */
-.finder-intro { padding: 40px 28px; }
-.finder-intro h1 { font-size: clamp(1.8rem, 5vw, 2.6rem); letter-spacing: -0.03em; max-width: 18ch; }
-.finder-intro .lead { color: rgb(255 255 255 / 0.9); margin-bottom: 22px; }
-.finder-hero-kicker { display: inline-block; margin-bottom: 10px; color: rgb(255 255 255 / 0.85); }
-.finder-play { min-height: 52px; padding: 12px 26px; font-size: 1.05rem; }
-.finder-time { margin: 12px 4px 0; }
+/* Intro: a welcome screen shown in focus mode (no shell chrome) */
+.finder-welcome {
+  max-width: 640px; min-height: calc(100dvh - 80px); display: flex; flex-direction: column; align-items: center;
+  justify-content: center; text-align: center; gap: 4px; padding: 24px 0;
+}
+.finder-welcome .orb { margin-bottom: 18px; animation: float 7s ease-in-out infinite; max-width: 60vw; height: auto; }
+.finder-welcome h1 { font-size: clamp(1.8rem, 5vw, 2.6rem); letter-spacing: -0.03em; max-width: 18ch; margin: 8px 0 10px; }
+.finder-welcome .lead { margin: 0 auto 24px; max-width: 46ch; }
+.finder-play { min-height: 56px; padding: 12px 28px; font-size: 1.05rem; }
+.finder-time { margin: 14px 0 0; }
+.finder-skip { display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; font-weight: 600; color: var(--text-2); }
 
 /* Question screen */
 .finder-top { margin-bottom: 12px; }
@@ -111,7 +115,6 @@
 .finder-nudge:hover .finder-nudge-arrow { transform: translateX(4px); }
 
 @media (max-width: 480px) {
-  .finder-intro { padding: 30px 20px; }
   .finder-option { min-height: 88px; gap: 14px; padding: 14px 16px; }
   .finder-letter { width: 42px; height: 42px; }
   .finder-ranked li { gap: 8px; }
@@ -128,7 +131,7 @@
 @keyframes finder-slide { from { opacity: 0; transform: translateX(18px); } to { opacity: 1; transform: none; } }
 
 @media (prefers-reduced-motion: reduce) {
-  .finder-question, .finder-option.popped, .finder-cluster { animation: none; }
+  .finder-question, .finder-option.popped, .finder-cluster, .finder-welcome .orb { animation: none; }
   .finder-option, .finder-letter, .finder-nudge-arrow { transition: none; }
   .finder-option:hover:not(:disabled), .finder-option.selected .finder-letter,
   .finder-option:hover:not(:disabled) .finder-letter { transform: none; }

@@ -1,9 +1,13 @@
 import { useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { BookOpen, ChevronRight } from 'lucide-react'
 import { getBoard, gradeLabel } from '../data/boards'
 import { careerTitle } from '../data/careers'
 import { getStream } from '../data/streams'
 import { sanitise, useStore } from '../store/store'
+import { PageHeader } from '../components/PageHeader'
+import { IconTile } from '../components/ui'
+import { tint } from '../design'
 
 export function Settings() {
   const { state, importState, reset } = useStore()
@@ -42,8 +46,18 @@ export function Settings() {
 
   return (
     <>
-      <span className="kicker">You</span>
-      <h1>Settings</h1>
+      <PageHeader kicker="You" title="Settings" lead="Your profile, your data and where to find everything else." />
+
+      <Link to="/curriculum" className="card lift section" style={{ display: 'flex', alignItems: 'center', gap: 14, ...tint(215) }}>
+        <IconTile hue={215} icon={BookOpen} />
+        <span style={{ flex: 1, minWidth: 0 }}>
+          <b>Curriculum</b>
+          <span className="small" style={{ display: 'block', color: 'var(--text-2)' }}>
+            Browse your full curriculum, grade by grade.
+          </span>
+        </span>
+        <ChevronRight size={20} aria-hidden="true" style={{ color: 'var(--muted)', flexShrink: 0 }} />
+      </Link>
       <div className="card section">
         <h3>Profile</h3>
         <ul className="list small">

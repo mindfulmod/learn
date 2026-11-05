@@ -6,7 +6,8 @@ import { rankCareers } from '../engine/careers'
 import { AREAS, scoreDiscovery, topTraits, TRAITS } from '../engine/discovery'
 import { buildProfile } from '../engine/profile'
 import { useStore } from '../store/store'
-import { Meter } from '../components/ui'
+import { IconTile, Meter } from '../components/ui'
+import { PageHeader } from '../components/PageHeader'
 import { AREA_META, TRAIT_META } from '../design'
 
 const PAGE = 6
@@ -34,29 +35,27 @@ export function Discover() {
   if (showResult && state.discovery) {
     const d = state.discovery
     const top = topTraits(d.traits, 2)
-    const TopIcon0 = TRAIT_META[top[0]].icon
-    const TopIcon1 = TRAIT_META[top[1]].icon
     return (
       <>
-        <span className="kicker">Discovery</span>
-        <h1>Your discovery profile</h1>
-        <p className="lead">
-          Completed {new Date(d.completedAt).toLocaleDateString()}. This is a starting picture of your interests; practice results refine it over time.
-        </p>
-        <div className="hero section">
-          <span className="eyebrow">Your profile</span>
-          <div className="row" style={{ gap: 14, marginBottom: 8 }}>
-            <span className="row" style={{ gap: 6 }} aria-hidden="true">
-              <TopIcon0 size={40} strokeWidth={1.6} />
-              <TopIcon1 size={40} strokeWidth={1.6} />
-            </span>
-            <h2 style={{ color: '#fff', margin: 0 }}>
+        <PageHeader
+          kicker="Discovery"
+          title="Your discovery profile"
+          lead={`Completed ${new Date(d.completedAt).toLocaleDateString()}. A starting picture of your interests; practice results refine it over time.`}
+        />
+        <div className="card accent section" style={{ display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          <span className="row" style={{ gap: 8, flexWrap: 'nowrap' }}>
+            <IconTile hue={TRAIT_META[top[0]].hue} icon={TRAIT_META[top[0]].icon} />
+            <IconTile hue={TRAIT_META[top[1]].hue} icon={TRAIT_META[top[1]].icon} />
+          </span>
+          <div style={{ flex: '1 1 240px', minWidth: 0 }}>
+            <span className="kicker">Your profile</span>
+            <h2 style={{ margin: '2px 0 6px' }}>
               {TRAIT_NAMES[top[0]]} and {TRAIT_NAMES[top[1]]}
             </h2>
+            <p className="small" style={{ margin: 0, color: 'var(--text-2)', maxWidth: '60ch' }}>
+              {TRAIT_BLURBS[top[0]]} {TRAIT_BLURBS[top[1]]}
+            </p>
           </div>
-          <p style={{ margin: 0, maxWidth: '60ch' }}>
-            {TRAIT_BLURBS[top[0]]} {TRAIT_BLURBS[top[1]]}
-          </p>
         </div>
         <div className="grid cols-2 section">
           <div className="card">
@@ -138,11 +137,11 @@ export function Discover() {
 
   return (
     <>
-      <span className="kicker">Discovery</span>
-      <h1>What suits you?</h1>
-      <p className="lead">
-        For each statement, choose how much it sounds like you. There are no right answers. {DISCOVERY_QUESTIONS.length} statements, about 5 minutes.
-      </p>
+      <PageHeader
+        kicker="Discovery"
+        title="What suits you?"
+        lead={`For each statement, choose how much it sounds like you. No right answers. ${DISCOVERY_QUESTIONS.length} statements, about 5 minutes.`}
+      />
       <div className="progress-steps" aria-label={`Page ${page + 1} of ${pages}`}>
         {Array.from({ length: pages }).map((_, i) => (
           <span key={i} className={i <= page ? 'done' : ''} />

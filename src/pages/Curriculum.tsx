@@ -11,6 +11,7 @@ import { buildProfile } from '../engine/profile'
 import { useStore } from '../store/store'
 import { LevelBadge, SubjectTile } from '../components/ui'
 import { CLUSTER_META, tint } from '../design'
+import { PageHeader } from '../components/PageHeader'
 
 export function Curriculum() {
   const { state } = useStore()
@@ -34,9 +35,7 @@ export function Curriculum() {
 
   return (
     <>
-      <span className="kicker">{board.shortName} track</span>
-      <h1>Curriculum</h1>
-      <p className="lead">Pick a grade to see its subjects and what each one covers.</p>
+      <PageHeader kicker={`${board.shortName} track`} title="Curriculum" lead="Pick a grade to see its subjects and what each one covers." />
 
       <div className="tabs pills" role="tablist" aria-label="Grade">
         {BOARD_GRADES[p.boardId].map((g) => (
