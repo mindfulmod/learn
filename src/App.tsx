@@ -5,6 +5,7 @@ import { Careers } from './pages/Careers'
 import { Curriculum } from './pages/Curriculum'
 import { Dashboard } from './pages/Dashboard'
 import { Discover } from './pages/Discover'
+import { Finder } from './pages/Finder'
 import { Onboarding } from './pages/Onboarding'
 import { Practice } from './pages/Practice'
 import { Progress } from './pages/Progress'
@@ -34,6 +35,7 @@ export default function App() {
         <Route path="careers" element={<Careers />} />
         <Route path="careers/:id" element={<CareerDetail />} />
         <Route path="discover" element={<Discover />} />
+        <Route path="finder" element={<Finder />} />
         <Route path="practice" element={<Practice />} />
         <Route path="practice/:subjectId" element={<Practice />} />
         <Route path="progress" element={<Progress />} />

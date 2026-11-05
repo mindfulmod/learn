@@ -65,11 +65,15 @@ export function Curriculum() {
                 <strong>{s.name}</strong>
                 <span className="small muted">{s.description}</span>
                 <span className="chips" style={{ marginTop: 6 }}>
-                  {s.leadsTo.map((c) => (
-                    <span key={c} className="chip tinted" style={tint(CLUSTER_META[c].hue)}>
-                      {CLUSTER_META[c].emoji} {CLUSTER_NAMES[c]}
-                    </span>
-                  ))}
+                  {s.leadsTo.map((c) => {
+                    const ClusterIcon = CLUSTER_META[c].icon
+                    return (
+                      <span key={c} className="chip tinted" style={tint(CLUSTER_META[c].hue)}>
+                        <ClusterIcon size={14} className="inline-icon" aria-hidden="true" />
+                        {CLUSTER_NAMES[c]}
+                      </span>
+                    )
+                  })}
                 </span>
               </button>
             ))}

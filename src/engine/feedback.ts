@@ -94,7 +94,22 @@ export function buildFeedback(state: StudentState, profile: StrengthProfile): Fe
   }
 
   // 4. Goal and discovery nudges
-  if (!state.discovery) {
+  if (goal && !state.previewed.includes(goal.id)) {
+    out.push({
+      kind: 'goal',
+      title: `See your future as a ${goal.title.split(' (')[0].toLowerCase()}`,
+      body: 'Year by year: what you study, the exams on the way, your first job, and what life looks like ten years in.',
+      action: { label: 'Peer into your future', to: `/careers/${goal.id}?preview=1` },
+    })
+  }
+  if (!state.goals.length && !state.finder) {
+    out.push({
+      kind: 'discover',
+      title: 'Not sure what you want to be? Play the finder',
+      body: 'Eight quick "would you rather" questions, three futures worth a look. It takes about three minutes.',
+      action: { label: 'Open the Career Finder', to: '/finder' },
+    })
+  } else if (!state.discovery) {
     out.push({
       kind: 'discover',
       title: 'Discover what suits you',

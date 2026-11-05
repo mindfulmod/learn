@@ -1,20 +1,21 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { ArrowRight, Compass, Eye, GraduationCap, Lightbulb, Puzzle, Rocket, Sparkles, Sun, Trophy, X } from 'lucide-react'
 import { getBoard, gradeLabel, stageForGrade } from '../data/boards'
 import { getCareer } from '../data/careers'
 import { TRAIT_NAMES } from '../data/discovery'
 import { getStream } from '../data/streams'
 import { subjectName } from '../data/subjects'
-import { CLUSTER_META, TRAIT_META, tint } from '../design'
+import { CLUSTER_META, STAT_ICON, TRAIT_META, tint } from '../design'
 import { careerFit, rankCareers } from '../engine/careers'
 import { topTraits } from '../engine/discovery'
 import { buildFeedback } from '../engine/feedback'
 import { goalPlan } from '../engine/plan'
 import { buildProfile, streak } from '../engine/profile'
 import { useStore } from '../store/store'
-import { FeedbackCard, LevelBadge, ScoreRing, SubjectTile, Tile } from '../components/ui'
+import { FeedbackCard, IconTile, LevelBadge, ScoreRing, SubjectTile } from '../components/ui'
 
-const ART = ['🚀', '🎒', '🧠', '🌱', '🏆', '✨']
+const ART = [Rocket, GraduationCap, Compass, Sparkles, Trophy, Lightbulb]
 
 export function Dashboard() {
   const { state } = useStore()
@@ -31,14 +32,30 @@ export function Dashboard() {
   const stage = stageForGrade(p.boardId, p.grade)
   const [hour] = useState(() => new Date().getHours())
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
-  const art = ART[(p.name.length + p.grade) % ART.length]
+  const Art = ART[(p.name.length + p.grade) % ART.length]
   const strongCount = Object.values(profile.subjects).filter((s) => s.level === 'strong').length
+  const [showGuide, setShowGuide] = useState(() => {
+    try {
+      return localStorage.getItem('rahnuma.guide') !== 'done'
+    } catch {
+      return true
+    }
+  })
+  const dismissGuide = () => {
+    setShowGuide(false)
+    try {
+      localStorage.setItem('rahnuma.guide', 'done')
+    } catch {
+      // ignore
+    }
+  }
 
   return (
     <>
       <section className="hero section">
         <span className="eyebrow">
-          {greeting} ☀️
+          <Sun size={14} className="inline-icon" aria-hidden="true" />
+          {greeting}
         </span>
         <h1>{p.name.split(' ')[0]}, let's build your path</h1>
         <p>
@@ -55,27 +72,61 @@ export function Dashboard() {
           )}
         </div>
         <span className="hero-art" aria-hidden="true">
-          {art}
+          <Art size={120} strokeWidth={1.4} />
         </span>
       </section>
 
+      {showGuide && (
+        <section className="card accent section guide">
+          <div className="row between" style={{ marginBottom: 10 }}>
+            <h3 style={{ margin: 0 }}>How Rahnuma works</h3>
+            <button className="btn sm" onClick={dismissGuide} aria-label="Dismiss guide">
+              <X size={14} aria-hidden="true" /> Got it
+            </button>
+          </div>
+          <div className="grid cols-3">
+            <Link to="/finder" className="guide-step">
+              <IconTile hue={320} icon={Compass} />
+              <b>1. Find a direction</b>
+              <span className="small">Play the Career Finder or browse careers. No idea needed.</span>
+            </Link>
+            <Link to="/careers" className="guide-step">
+              <IconTile hue={215} icon={Eye} />
+              <b>2. Peer into the future</b>
+              <span className="small">Preview any career year by year: what you study, when, what life looks like.</span>
+            </Link>
+            <Link to="/practice" className="guide-step">
+              <IconTile hue={160} icon={Puzzle} />
+              <b>3. Train for it</b>
+              <span className="small">Practise the subjects that matter. Your coach tells you what to work on.</span>
+            </Link>
+          </div>
+        </section>
+      )}
+
       <div className="grid cols-3 section">
         <div className="card stat" style={tint(28)}>
-          <span className="icon">🔥</span>
+          <span className="icon">
+            <STAT_ICON.streak size={22} />
+          </span>
           <div>
             <b>{st.current}</b>
             <span>day streak{st.best > st.current ? ` · best ${st.best}` : ''}</span>
           </div>
         </div>
         <div className="card stat" style={tint(215)}>
-          <span className="icon">🧩</span>
+          <span className="icon">
+            <STAT_ICON.questions size={22} />
+          </span>
           <div>
             <b>{profile.totalItems}</b>
             <span>questions practised</span>
           </div>
         </div>
         <div className="card stat" style={tint(160)}>
-          <span className="icon">🏅</span>
+          <span className="icon">
+            <STAT_ICON.strong size={22} />
+          </span>
           <div>
             <b>{strongCount}</b>
             <span>strong subject{strongCount === 1 ? '' : 's'}</span>
@@ -93,7 +144,7 @@ export function Dashboard() {
             <div className="card">
               <div className="row between" style={{ marginBottom: 14 }}>
                 <div className="row" style={{ gap: 12 }}>
-                  <Tile hue={CLUSTER_META[goal.cluster].hue}>{CLUSTER_META[goal.cluster].emoji}</Tile>
+                  <IconTile hue={CLUSTER_META[goal.cluster].hue} icon={CLUSTER_META[goal.cluster].icon} />
                   <div>
                     <h3 style={{ marginBottom: 2 }}>{goal.title}</h3>
                     <span className="small muted">{plan.stageLabel} stage</span>
@@ -134,14 +185,19 @@ export function Dashboard() {
                   </ul>
                 </>
               )}
-              <Link to={`/careers/${goal.id}`} className="btn sm" style={{ marginTop: 6 }}>
-                Full roadmap →
-              </Link>
+              <div className="row" style={{ marginTop: 6 }}>
+                <Link to={`/careers/${goal.id}?preview=1`} className="btn sm primary">
+                  <Eye size={16} aria-hidden="true" /> Peer into your future
+                </Link>
+                <Link to={`/careers/${goal.id}`} className="btn sm">
+                  Full details <ArrowRight size={16} aria-hidden="true" />
+                </Link>
+              </div>
             </div>
           ) : (
             <div className="card soft">
               <div className="row" style={{ gap: 12, marginBottom: 10 }}>
-                <Tile hue={258}>🧭</Tile>
+                <IconTile hue={258} icon={Compass} />
                 <h3 style={{ margin: 0 }}>No goal yet</h3>
               </div>
               <p className="small" style={{ color: 'var(--text-2)' }}>
@@ -154,18 +210,26 @@ export function Dashboard() {
                     {suggestions.map((s) => (
                       <li key={s.career.id} className="row between">
                         <Link to={`/careers/${s.career.id}`} style={{ fontWeight: 600 }}>
-                          {CLUSTER_META[s.career.cluster].emoji} {s.career.title}
+                          {(() => {
+                            const ClusterIcon = CLUSTER_META[s.career.cluster].icon
+                            return <ClusterIcon size={16} className="inline-icon" aria-hidden="true" />
+                          })()}
+                          {s.career.title}
                         </Link>
                         <span className="badge primary">{s.score}% fit</span>
                       </li>
                     ))}
                   </ul>
                 </>
-              ) : (
-                <Link to="/discover" className="btn primary">
-                  Discover what suits you
+              ) : null}
+              <div className="row" style={{ marginTop: 12 }}>
+                <Link to="/finder" className="btn primary">
+                  <Compass size={18} aria-hidden="true" /> Help me find a career
                 </Link>
-              )}
+                <Link to="/careers" className="btn">
+                  Browse careers
+                </Link>
+              </div>
             </div>
           )}
         </section>
@@ -180,7 +244,11 @@ export function Dashboard() {
               <div className="chips" style={{ marginBottom: 14 }}>
                 {topTraits(state.discovery.traits, 2).map((t) => (
                   <span key={t} className="chip tinted" style={tint(TRAIT_META[t].hue)}>
-                    {TRAIT_META[t].emoji} {TRAIT_NAMES[t]}
+                    {(() => {
+                      const TraitIcon = TRAIT_META[t].icon
+                      return <TraitIcon size={14} className="inline-icon" aria-hidden="true" />
+                    })()}
+                    {TRAIT_NAMES[t]}
                   </span>
                 ))}
               </div>
@@ -206,9 +274,7 @@ export function Dashboard() {
               </ul>
             ) : (
               <div className="empty" style={{ padding: '18px 0 6px' }}>
-                <Tile hue={160} large>
-                  🧩
-                </Tile>
+                <IconTile hue={160} icon={Puzzle} large />
                 <p className="small muted" style={{ margin: 0 }}>
                   Practise a subject to start building your strength profile.
                 </p>

@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { subjectEmoji, tint, AREA_META } from '../design'
+import { Sparkles, type LucideIcon } from 'lucide-react'
+import { subjectIcon, tint, AREA_META, FEEDBACK_ICON } from '../design'
 import { getSubject } from '../data/subjects'
-import type { FeedbackItem, FeedbackKind } from '../engine/feedback'
+import type { FeedbackItem } from '../engine/feedback'
 import type { MasteryLevel } from '../engine/profile'
 
 export function Bar({ value, tone, label, hue }: { value: number; tone?: 'good' | 'warn' | 'bad' | 'accent' | 'tinted'; label?: string; hue?: number }) {
@@ -57,31 +58,28 @@ export function Tile({ hue, children, large }: { hue: number; children: ReactNod
   )
 }
 
-export function SubjectTile({ subjectId, large }: { subjectId: string; large?: boolean }) {
-  const s = getSubject(subjectId)
-  const hue = s ? AREA_META[s.area].hue : 258
+/** Tile holding a lucide icon. */
+export function IconTile({ hue, icon: Icon, large }: { hue: number; icon: LucideIcon; large?: boolean }) {
   return (
     <Tile hue={hue} large={large}>
-      {subjectEmoji(subjectId, s?.area)}
+      <Icon size={large ? 30 : 22} strokeWidth={2.2} />
     </Tile>
   )
 }
 
-const KIND_EMOJI: Record<FeedbackKind, string> = {
-  strength: '🌟',
-  gap: '🎯',
-  habit: '🔥',
-  next: '👉',
-  goal: '🧭',
-  discover: '🔮',
+export function SubjectTile({ subjectId, large }: { subjectId: string; large?: boolean }) {
+  const s = getSubject(subjectId)
+  const hue = s ? AREA_META[s.area].hue : 258
+  return <IconTile hue={hue} icon={subjectIcon(subjectId, s?.area)} large={large} />
 }
 
 export function FeedbackCard({ item }: { item: FeedbackItem }) {
+  const KindIcon = FEEDBACK_ICON[item.kind]
   return (
     <div className={`card feedback ${item.kind}`}>
       <h3>
         <span className="kind" aria-hidden="true">
-          {KIND_EMOJI[item.kind]}
+          <KindIcon size={16} strokeWidth={2.2} />
         </span>
         {item.title}
       </h3>
@@ -97,12 +95,10 @@ export function FeedbackCard({ item }: { item: FeedbackItem }) {
   )
 }
 
-export function Empty({ title, body, action, emoji = '✨' }: { title: string; body: string; action?: { to: string; label: string }; emoji?: string }) {
+export function Empty({ title, body, action, icon = Sparkles }: { title: string; body: string; action?: { to: string; label: string }; icon?: LucideIcon }) {
   return (
     <div className="card soft empty">
-      <Tile hue={258} large>
-        {emoji}
-      </Tile>
+      <IconTile hue={258} icon={icon} large />
       <h3>{title}</h3>
       <p className="muted" style={{ maxWidth: 44 + 'ch', margin: '0 auto 14px' }}>
         {body}

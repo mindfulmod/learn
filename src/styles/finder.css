@@ -1,0 +1,135 @@
+/* ---------- Career Finder ---------------------------------------------- */
+.finder { max-width: 960px; margin: 0 auto; }
+
+/* Intro */
+.finder-intro { padding: 40px 28px; }
+.finder-intro h1 { font-size: clamp(1.8rem, 5vw, 2.6rem); letter-spacing: -0.03em; max-width: 18ch; }
+.finder-intro .lead { color: rgb(255 255 255 / 0.9); margin-bottom: 22px; }
+.finder-hero-kicker { display: inline-block; margin-bottom: 10px; color: rgb(255 255 255 / 0.85); }
+.finder-play { min-height: 52px; padding: 12px 26px; font-size: 1.05rem; }
+.finder-time { margin: 12px 4px 0; }
+
+/* Question screen */
+.finder-top { margin-bottom: 12px; }
+.finder-back {
+  display: inline-flex; align-items: center; gap: 6px; padding: 8px 10px 8px 4px; margin-left: -4px;
+  border: 0; background: none; color: var(--text-2); font: inherit; font-weight: 700; cursor: pointer; border-radius: 999px;
+}
+.finder-back:hover { color: var(--brand-strong); }
+.finder-back:focus-visible { outline: 3px solid var(--brand-glow); outline-offset: 2px; }
+.finder .progress-steps span.current { background: var(--brand-soft); box-shadow: inset 0 0 0 1px var(--brand); }
+
+.finder-question { animation: finder-slide 0.32s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.finder-prompt {
+  font-family: var(--font-display); font-size: clamp(1.4rem, 4.2vw, 2rem); line-height: 1.25;
+  letter-spacing: -0.02em; margin: 6px 0 22px; max-width: 30ch;
+}
+.finder-options { display: grid; gap: 14px; grid-template-columns: 1fr; }
+@media (min-width: 640px) { .finder-options { grid-template-columns: 1fr 1fr; } }
+
+.finder-option {
+  position: relative; display: flex; align-items: center; gap: 16px; min-height: 96px; width: 100%;
+  padding: 16px 44px 16px 16px; text-align: left; font: inherit; font-size: 1.02rem; font-weight: 600; line-height: 1.4;
+  color: var(--text); background: var(--surface); border: 2px solid var(--border); border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm); cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s, box-shadow 0.18s, background 0.18s, opacity 0.2s;
+}
+.finder-option:hover:not(:disabled) { transform: translateY(-3px); border-color: var(--tint); box-shadow: 0 14px 28px -12px var(--tint-glow); }
+.finder-option:active:not(:disabled) { transform: scale(0.98); }
+.finder-option:focus-visible { outline: none; border-color: var(--tint); box-shadow: 0 0 0 4px var(--tint-glow); }
+.finder-option.selected { border-color: var(--tint); background: var(--tint-soft); box-shadow: 0 0 0 4px var(--tint-glow); }
+.finder-option.popped { animation: finder-pop 0.35s cubic-bezier(0.2, 0.8, 0.2, 1.4) both; }
+.finder-option:disabled { cursor: default; opacity: 0.5; }
+
+.finder-letter {
+  flex-shrink: 0; width: 46px; height: 46px; border-radius: 15px; display: grid; place-items: center;
+  font-family: var(--font-display); font-weight: 800; font-size: 1.2rem; color: #fff;
+  background: var(--tint-gradient); box-shadow: 0 8px 16px -6px var(--tint-glow);
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1.4);
+}
+.finder-option:hover:not(:disabled) .finder-letter { transform: rotate(-6deg) scale(1.06); }
+.finder-option.selected .finder-letter { transform: scale(1.1); }
+.finder-option-text { flex: 1; min-width: 0; }
+.finder-key {
+  position: absolute; top: 10px; right: 12px; font-family: var(--font-body); font-size: 0.72rem; font-weight: 700;
+  color: var(--muted); padding: 1px 7px; border-radius: 6px; border: 1px solid var(--border);
+}
+.finder-hint { margin-top: 18px; text-align: center; }
+@media (hover: none) { .finder-key, .finder-hint { display: none; } }
+
+/* Results */
+.finder-note {
+  display: flex; align-items: flex-start; gap: 10px; padding: 12px 16px; margin-bottom: 20px;
+  border-radius: var(--r-md); background: var(--surface-2); color: var(--text-2);
+}
+.finder-note svg { flex-shrink: 0; margin-top: 2px; color: var(--brand-strong); }
+.finder-note a { font-weight: 700; }
+
+.finder-results { margin-top: 20px; align-items: stretch; }
+.finder-cluster {
+  display: flex; flex-direction: column; gap: 14px; position: relative; overflow: hidden;
+  animation: rise 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.finder-cluster::before {
+  content: ''; position: absolute; inset: 0 0 auto 0; height: 5px; background: var(--tint-gradient);
+}
+.finder-cluster-head { flex-wrap: nowrap; gap: 12px; }
+.finder-cluster-head h3 { margin: 0; font-size: 1.1rem; line-height: 1.25; }
+.finder-rank { display: block; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--tint-strong); }
+.finder-match b { font-family: var(--font-display); color: var(--tint-strong); font-size: 1rem; }
+.finder-match .bar { margin-top: 6px; background: var(--surface); }
+.finder-why { margin: 0; font-size: 0.92rem; color: var(--text-2); font-style: italic; }
+
+.finder-careers { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.finder-why { min-height: 3.2em; }
+.finder-careers li {
+  display: flex; align-items: center; gap: 10px; padding: 10px 10px 10px 14px;
+  border-radius: var(--r-md); background: var(--surface);
+}
+.finder-career-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.finder-career-title { gap: 6px; flex-wrap: wrap; }
+.finder-career-title a { font-weight: 700; color: var(--text); }
+.finder-fact { font-size: 0.74rem; color: var(--muted); line-height: 1.35; }
+.finder-careers .btn.sm { flex-shrink: 0; padding: 7px 12px; }
+
+.finder-ranked { list-style: none; margin: 0; padding: 0; }
+.finder-ranked li {
+  display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.finder-ranked li:last-child { border-bottom: 0; }
+.finder-ranked-num { width: 1.6em; text-align: right; font-family: var(--font-display); font-weight: 800; color: var(--muted); flex-shrink: 0; }
+.finder-ranked-icon.tile-icon { width: 36px; height: 36px; border-radius: 11px; }
+.finder-ranked-icon.tile-icon svg { width: 18px; height: 18px; }
+.finder-ranked-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.finder-ranked-body a { font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; }
+.finder-ranked .btn.sm { flex-shrink: 0; }
+.finder-all { display: inline-flex; align-items: center; gap: 6px; margin-top: 14px; font-weight: 700; }
+
+.finder-nudge { display: flex; align-items: center; gap: 14px; color: var(--text); border-color: transparent; background: var(--tint-soft); }
+.finder-nudge > div { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.finder-nudge-arrow { flex-shrink: 0; color: var(--tint-strong); transition: transform 0.2s; }
+.finder-nudge:hover .finder-nudge-arrow { transform: translateX(4px); }
+
+@media (max-width: 480px) {
+  .finder-intro { padding: 30px 20px; }
+  .finder-option { min-height: 88px; gap: 14px; padding: 14px 16px; }
+  .finder-letter { width: 42px; height: 42px; }
+  .finder-ranked li { gap: 8px; }
+  .finder-ranked-num { display: none; }
+  .finder-ranked .btn.sm { padding: 7px 10px; }
+}
+
+@keyframes finder-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(0.95); }
+  75% { transform: scale(1.04); }
+  100% { transform: scale(1.02); }
+}
+@keyframes finder-slide { from { opacity: 0; transform: translateX(18px); } to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .finder-question, .finder-option.popped, .finder-cluster { animation: none; }
+  .finder-option, .finder-letter, .finder-nudge-arrow { transition: none; }
+  .finder-option:hover:not(:disabled), .finder-option.selected .finder-letter,
+  .finder-option:hover:not(:disabled) .finder-letter { transform: none; }
+}

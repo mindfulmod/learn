@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Check, Dumbbell, Lightbulb, PartyPopper, RefreshCw, Target, ThumbsUp } from 'lucide-react'
 import { bandForGrade, BOARD_GRADES } from '../data/boards'
 import { getCareer } from '../data/careers'
 import { subjectsWithItems } from '../data/quizzes'
@@ -52,7 +53,10 @@ export function Practice() {
               <div>
                 <div className="row between" style={{ marginBottom: 4 }}>
                   <h3 style={{ margin: 0 }}>{subjectName(id)}</h3>
-                  {must.has(id) && <span className="chip must">🎯 goal subject</span>}
+                  {must.has(id) && <span className="chip must">
+                      <Target size={12} className="inline-icon" aria-hidden="true" />
+                      goal subject
+                    </span>}
                 </div>
                 <p className="small" style={{ marginBottom: 10, color: 'var(--text-2)' }}>
                   {subj?.description}
@@ -141,7 +145,22 @@ function Quiz({ subjectId, band: initialBand }: { subjectId: string; band: Grade
           </div>
         </div>
         <p className="lead">
-          {pct >= 85 ? '🎉 Excellent. Next round will be harder.' : pct >= 60 ? '👏 Good work. A few topics to revise below.' : '💪 Good effort. Read the explanations, then try again tomorrow.'}
+          {pct >= 85 ? (
+            <>
+              <PartyPopper size={20} className="inline-icon" style={{ verticalAlign: 'middle' }} aria-hidden="true" />
+              Excellent. Next round will be harder.
+            </>
+          ) : pct >= 60 ? (
+            <>
+              <ThumbsUp size={20} className="inline-icon" style={{ verticalAlign: 'middle' }} aria-hidden="true" />
+              Good work. A few topics to revise below.
+            </>
+          ) : (
+            <>
+              <Dumbbell size={20} className="inline-icon" style={{ verticalAlign: 'middle' }} aria-hidden="true" />
+              Good effort. Read the explanations, then try again tomorrow.
+            </>
+          )}
         </p>
         <p className="small muted">
           {subjectName(subjectId)} · grades {band}
@@ -193,7 +212,7 @@ function Quiz({ subjectId, band: initialBand }: { subjectId: string; band: Grade
         )}
         <div className="row">
           <button className="btn primary" onClick={() => nav(0)}>
-            🔁 Another round
+            <RefreshCw size={18} aria-hidden="true" /> Another round
           </button>
           <Link to="/practice" className="btn">
             Other subjects
@@ -256,7 +275,11 @@ function Quiz({ subjectId, band: initialBand }: { subjectId: string; band: Grade
         </div>
         {revealed && (
           <div className={`explain pop ${chosen === item.answer ? 'ok' : 'no'}`}>
-            <b>{chosen === item.answer ? '✅ Correct!' : '💡 Not quite.'}</b> {item.explanation}
+            <b>
+              {chosen === item.answer ? <Check size={16} className="inline-icon" aria-hidden="true" /> : <Lightbulb size={16} className="inline-icon" aria-hidden="true" />}
+              {chosen === item.answer ? 'Correct!' : 'Not quite.'}
+            </b>{' '}
+            {item.explanation}
           </div>
         )}
         <div className="row" style={{ marginTop: 16 }}>

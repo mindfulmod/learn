@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Frown, Heart, Laugh, Meh, Smile } from 'lucide-react'
 import { AREA_NAMES, DISCOVERY_QUESTIONS, LIKERT, TRAIT_BLURBS, TRAIT_NAMES } from '../data/discovery'
 import { rankCareers } from '../engine/careers'
 import { AREAS, scoreDiscovery, topTraits, TRAITS } from '../engine/discovery'
@@ -9,7 +10,7 @@ import { Meter } from '../components/ui'
 import { AREA_META, TRAIT_META } from '../design'
 
 const PAGE = 6
-const FACES = ['😐', '🙂', '😊', '😄', '🤩']
+const FACES = [Frown, Meh, Smile, Laugh, Heart]
 
 export function Discover() {
   const { state, setDiscovery } = useStore()
@@ -33,6 +34,8 @@ export function Discover() {
   if (showResult && state.discovery) {
     const d = state.discovery
     const top = topTraits(d.traits, 2)
+    const TopIcon0 = TRAIT_META[top[0]].icon
+    const TopIcon1 = TRAIT_META[top[1]].icon
     return (
       <>
         <span className="kicker">Discovery</span>
@@ -43,9 +46,9 @@ export function Discover() {
         <div className="hero section">
           <span className="eyebrow">Your profile</span>
           <div className="row" style={{ gap: 14, marginBottom: 8 }}>
-            <span style={{ fontSize: '2.4rem' }} aria-hidden="true">
-              {TRAIT_META[top[0]].emoji}
-              {TRAIT_META[top[1]].emoji}
+            <span className="row" style={{ gap: 6 }} aria-hidden="true">
+              <TopIcon0 size={40} strokeWidth={1.6} />
+              <TopIcon1 size={40} strokeWidth={1.6} />
             </span>
             <h2 style={{ color: '#fff', margin: 0 }}>
               {TRAIT_NAMES[top[0]]} and {TRAIT_NAMES[top[1]]}
@@ -61,19 +64,23 @@ export function Discover() {
             <div className="stack">
               {[...TRAITS]
                 .sort((a, b) => d.traits[b] - d.traits[a])
-                .map((t) => (
-                  <Meter
-                    key={t}
-                    label={
-                      <>
-                        {TRAIT_META[t].emoji} {TRAIT_NAMES[t]}
-                      </>
-                    }
-                    value={d.traits[t]}
-                    tone="tinted"
-                    hue={TRAIT_META[t].hue}
-                  />
-                ))}
+                .map((t) => {
+                  const TraitIcon = TRAIT_META[t].icon
+                  return (
+                    <Meter
+                      key={t}
+                      label={
+                        <>
+                          <TraitIcon size={16} className="inline-icon" aria-hidden="true" />
+                          {TRAIT_NAMES[t]}
+                        </>
+                      }
+                      value={d.traits[t]}
+                      tone="tinted"
+                      hue={TRAIT_META[t].hue}
+                    />
+                  )
+                })}
             </div>
           </div>
           <div className="card">
@@ -82,19 +89,23 @@ export function Discover() {
             <div className="stack">
               {[...AREAS]
                 .sort((a, b) => profile.areas[b] - profile.areas[a])
-                .map((a) => (
-                  <Meter
-                    key={a}
-                    label={
-                      <>
-                        {AREA_META[a].emoji} {AREA_NAMES[a]}
-                      </>
-                    }
-                    value={profile.areas[a]}
-                    tone="tinted"
-                    hue={AREA_META[a].hue}
-                  />
-                ))}
+                .map((a) => {
+                  const AreaIcon = AREA_META[a].icon
+                  return (
+                    <Meter
+                      key={a}
+                      label={
+                        <>
+                          <AreaIcon size={16} className="inline-icon" aria-hidden="true" />
+                          {AREA_NAMES[a]}
+                        </>
+                      }
+                      value={profile.areas[a]}
+                      tone="tinted"
+                      hue={AREA_META[a].hue}
+                    />
+                  )
+                })}
             </div>
           </div>
         </div>
@@ -145,7 +156,9 @@ export function Discover() {
               <b>{page * PAGE + i + 1}.</b> {q.text}
             </p>
             <div className="likert" role="radiogroup" aria-label={q.text}>
-              {LIKERT.map((l) => (
+              {LIKERT.map((l) => {
+                const Face = FACES[l.value - 1]
+                return (
                 <button
                   key={l.value}
                   role="radio"
@@ -154,11 +167,12 @@ export function Discover() {
                   onClick={() => setAnswers({ ...answers, [q.id]: l.value })}
                 >
                   <span className="face" aria-hidden="true">
-                    {FACES[l.value - 1]}
+                    <Face size={22} />
                   </span>
                   {l.label}
                 </button>
-              ))}
+                )
+              })}
             </div>
           </fieldset>
         ))}

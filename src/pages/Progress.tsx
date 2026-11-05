@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
+import { Puzzle } from 'lucide-react'
 import { AREA_NAMES } from '../data/discovery'
 import { subjectName } from '../data/subjects'
 import { AREAS } from '../engine/discovery'
@@ -7,7 +8,7 @@ import { buildFeedback } from '../engine/feedback'
 import { buildProfile, streak } from '../engine/profile'
 import { useStore } from '../store/store'
 import { Empty, FeedbackCard, LevelBadge, Meter } from '../components/ui'
-import { AREA_META, subjectEmoji, tint } from '../design'
+import { AREA_META, STAT_ICON, subjectIcon, tint } from '../design'
 
 export function Progress() {
   const { state } = useStore()
@@ -25,21 +26,27 @@ export function Progress() {
 
       <div className="grid cols-3 section">
         <div className="card stat" style={tint(258)}>
-          <span className="icon">🧩</span>
+          <span className="icon">
+            <STAT_ICON.rounds size={22} />
+          </span>
           <div>
             <b>{state.attempts.length}</b>
             <span>practice rounds</span>
           </div>
         </div>
         <div className="card stat" style={tint(160)}>
-          <span className="icon">🎯</span>
+          <span className="icon">
+            <STAT_ICON.accuracy size={22} />
+          </span>
           <div>
             <b>{profile.totalItems ? Math.round((state.attempts.reduce((s, a) => s + a.correct, 0) / profile.totalItems) * 100) : 0}%</b>
             <span>overall accuracy</span>
           </div>
         </div>
         <div className="card stat" style={tint(28)}>
-          <span className="icon">🔥</span>
+          <span className="icon">
+            <STAT_ICON.streak size={22} />
+          </span>
           <div>
             <b>{st.current}</b>
             <span>day streak · best {st.best}</span>
@@ -48,18 +55,20 @@ export function Progress() {
       </div>
 
       {!subjects.length ? (
-        <Empty emoji="🧩" title="No practice yet" body="Your strength profile builds from practice rounds. Each one is eight questions." action={{ to: '/practice', label: 'Start practising' }} />
+        <Empty icon={Puzzle} title="No practice yet" body="Your strength profile builds from practice rounds. Each one is eight questions." action={{ to: '/practice', label: 'Start practising' }} />
       ) : (
         <div className="grid cols-2 section">
           <div className="card">
             <h3>Subjects</h3>
             <div className="stack">
-              {subjects.map((s) => (
+              {subjects.map((s) => {
+                const SubjIcon = subjectIcon(s.subjectId, s.area)
+                return (
                 <div key={s.subjectId}>
                   <Meter
                     label={
                       <span className="row" style={{ gap: 8 }}>
-                        <span aria-hidden="true">{subjectEmoji(s.subjectId, s.area)}</span>
+                        <SubjIcon size={16} aria-hidden="true" />
                         <Link to={`/practice/${s.subjectId}`}>{subjectName(s.subjectId)}</Link>
                         {s.trend === 'up' && <span className="badge good">↑</span>}
                         {s.trend === 'down' && <span className="badge warn">↓</span>}
@@ -74,7 +83,8 @@ export function Progress() {
                     {s.weakTopics.length ? ` · revise: ${s.weakTopics.slice(0, 3).join(', ')}` : ''}
                   </p>
                 </div>
-              ))}
+                )
+              })}
             </div>
           </div>
           <div className="card">
@@ -83,12 +93,15 @@ export function Progress() {
             <div className="stack">
               {[...AREAS]
                 .sort((a, b) => profile.areas[b] - profile.areas[a])
-                .map((a) => (
+                .map((a) => {
+                  const AreaIcon = AREA_META[a].icon
+                  return (
                   <Meter
                     key={a}
                     label={
                       <>
-                        {AREA_META[a].emoji} {AREA_NAMES[a]}
+                        <AreaIcon size={16} className="inline-icon" aria-hidden="true" />
+                        {AREA_NAMES[a]}
                       </>
                     }
                     value={profile.areas[a]}
@@ -96,7 +109,8 @@ export function Progress() {
                     hue={AREA_META[a].hue}
                     right={`${profile.areas[a]}% · ${Math.round(profile.areaEvidence[a] * 100)}% from practice`}
                   />
-                ))}
+                  )
+                })}
             </div>
           </div>
         </div>

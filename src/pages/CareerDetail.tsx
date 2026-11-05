@@ -1,14 +1,17 @@
-import { useMemo } from 'react'
-import { Link, Navigate, useParams } from 'react-router-dom'
+import { useMemo, useState } from 'react'
+import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
+import { ArrowLeft, Banknote, Clock, Eye, GraduationCap, Star, Target, TrendingUp } from 'lucide-react'
 import { getBoard, STAGES, stageForGrade } from '../data/boards'
 import { CLUSTER_NAMES, getCareer } from '../data/careers'
+import { careerLife, formatPkr } from '../data/careerLife'
+import { FuturePreview } from '../components/FuturePreview'
 import { subjectsWithItems } from '../data/quizzes'
 import { bandForGrade } from '../data/boards'
 import { careerFit, hasSignal } from '../engine/careers'
 import { goalPlan } from '../engine/plan'
 import { buildProfile } from '../engine/profile'
 import { useStore } from '../store/store'
-import { LevelBadge, ScoreRing, Tile } from '../components/ui'
+import { IconTile, LevelBadge, ScoreRing } from '../components/ui'
 import { CLUSTER_META, tint } from '../design'
 
 export function CareerDetail() {
@@ -17,8 +20,17 @@ export function CareerDetail() {
   const career = id ? getCareer(id) : undefined
   const p = state.profile!
   const profile = useMemo(() => buildProfile(state), [state])
+  const [params, setParams] = useSearchParams()
+  const [localPreview, setLocalPreview] = useState(false)
+  const preview = localPreview || params.get('preview') === '1'
+  const setPreview = (open: boolean) => {
+    setLocalPreview(open)
+    if (!open && params.has('preview')) setParams({}, { replace: true })
+  }
+  const closePreview = () => setPreview(false)
   if (!career) return <Navigate to="/careers" replace />
 
+  const life = careerLife(career.id)
   const plan = goalPlan(career, p, profile)
   const fit = hasSignal(state) ? careerFit(career, state, profile) : null
   const isGoal = state.goals.includes(career.id)
@@ -35,13 +47,12 @@ export function CareerDetail() {
   return (
     <>
       <Link to="/careers" className="small">
-        ← All careers
+        <ArrowLeft size={14} className="inline-icon" aria-hidden="true" />
+        All careers
       </Link>
       <div className="row between" style={{ marginTop: 10, marginBottom: 6, alignItems: 'flex-start' }}>
         <div className="row" style={{ gap: 16, alignItems: 'flex-start' }}>
-          <Tile hue={CLUSTER_META[career.cluster].hue} large>
-            {CLUSTER_META[career.cluster].emoji}
-          </Tile>
+          <IconTile hue={CLUSTER_META[career.cluster].hue} icon={CLUSTER_META[career.cluster].icon} large />
           <div>
             <span className="badge tinted" style={tint(CLUSTER_META[career.cluster].hue)}>
               {CLUSTER_NAMES[career.cluster]}
@@ -53,10 +64,52 @@ export function CareerDetail() {
       </div>
       <p className="lead">{career.summary}</p>
       <div className="row section">
-        <button className={`btn ${isGoal ? '' : 'primary'}`} onClick={toggleGoal}>
-          {isGoal ? '★ Remove from my goals' : state.goals.length ? '🎯 Make this my main goal' : '🎯 Set as my goal'}
+        <button className="btn primary" onClick={() => setPreview(true)}>
+          <Eye size={18} aria-hidden="true" />
+          Peer into your future
+        </button>
+        <button className="btn" onClick={toggleGoal}>
+          {isGoal ? <Star size={18} fill="currentColor" aria-hidden="true" /> : <Target size={18} aria-hidden="true" />}
+          {isGoal ? 'Remove from my goals' : state.goals.length ? 'Make this my main goal' : 'Set as my goal'}
         </button>
       </div>
+      {preview && <FuturePreview careerId={career.id} onClose={closePreview} />}
+
+      {life && (
+        <div className="grid cols-3 section">
+          <div className="card stat" style={tint(215)}>
+            <span className="icon">
+              <GraduationCap size={22} />
+            </span>
+            <div>
+              <b>
+                {life.yearsOfStudy + (life.training?.years ?? 0)} yrs
+              </b>
+              <span>study and training after grade 12</span>
+            </div>
+          </div>
+          <div className="card stat" style={tint(160)}>
+            <span className="icon">
+              <Banknote size={22} />
+            </span>
+            <div>
+              <b>
+                Rs {formatPkr(life.pay.entry[0])}–{formatPkr(life.pay.entry[1])}
+              </b>
+              <span>per month to start · up to {formatPkr(life.pay.experienced[1])} later</span>
+            </div>
+          </div>
+          <div className="card stat" style={tint(28)}>
+            <span className="icon">
+              <TrendingUp size={22} />
+            </span>
+            <div>
+              <b style={{ textTransform: 'capitalize' }}>{life.demand}</b>
+              <span>demand · <Clock size={12} className="inline-icon" aria-hidden="true" />{life.hours.split(';')[0].split(',')[0].toLowerCase()}</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {fit && (fit.reasons.length > 0 || fit.cautions.length > 0) && (
         <div className="card section">

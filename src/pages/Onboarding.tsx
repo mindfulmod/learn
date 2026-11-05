@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Compass, Lock, Rocket, Sparkles, Target } from 'lucide-react'
 import { BOARD_GRADES, BOARDS, getBoard, gradeLabel, stageForGrade } from '../data/boards'
 import { CAREERS, CLUSTER_NAMES } from '../data/careers'
 import { streamsFor } from '../data/streams'
@@ -16,6 +17,7 @@ export function Onboarding() {
   const [boardId, setBoardId] = useState<BoardId>(existing?.boardId ?? 'national')
   const [streamId, setStreamId] = useState<string | undefined>(existing?.streamId)
   const [goal, setGoal] = useState<string | undefined>(state.goals[0])
+  const [goalMode, setGoalMode] = useState<'has' | 'find' | null>(state.goals[0] ? 'has' : null)
 
   const stage = stageForGrade(boardId, grade)
   const needsStream = stage === 'secondary' || stage === 'higher-secondary'
@@ -30,8 +32,8 @@ export function Onboarding() {
       streamId: needsStream ? streamId : undefined,
       createdAt: existing?.createdAt ?? new Date().toISOString(),
     })
-    setGoals(goal ? [goal] : [])
-    nav('/', { replace: true })
+    setGoals(goalMode === 'has' && goal ? [goal] : [])
+    nav(goalMode === 'has' && goal ? `/careers/${goal}?preview=1` : goalMode === 'find' ? '/finder' : '/', { replace: true })
   }
 
   const steps = ['About you', 'Your school', 'Your goal']
@@ -47,8 +49,8 @@ export function Onboarding() {
               <p style={{ margin: 0 }}>Your guide from here to the career you want.</p>
             </div>
           </div>
-          <span className="hero-art" aria-hidden="true" style={{ fontSize: '4rem', top: 14, bottom: 'auto' }}>
-            🚀
+          <span className="hero-art" aria-hidden="true" style={{ top: 14, bottom: 'auto' }}>
+            <Rocket size={72} strokeWidth={1.4} />
           </span>
         </div>
 
@@ -145,35 +147,70 @@ export function Onboarding() {
           <div className="card">
             <span className="kicker">Step 3 of 3</span>
             <h2>Do you have a career in mind?</h2>
-            <p className="small muted">Optional. If you are not sure, skip this and take the discovery quiz; it suggests careers that fit you.</p>
-            <label className="field">
-              <span>Career goal</span>
-              <select value={goal ?? ''} onChange={(e) => setGoal(e.target.value || undefined)}>
-                <option value="">Not sure yet</option>
-                {Object.entries(CLUSTER_NAMES).map(([cluster, label]) => (
-                  <optgroup key={cluster} label={label}>
-                    {CAREERS.filter((c) => c.cluster === cluster).map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.title}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-            </label>
+            <p className="small muted">Most people your age don't, and that is completely fine. Pick whichever is true for you.</p>
+            <div className="choices" style={{ marginBottom: 16 }}>
+              <button className={`choice ${goalMode === 'has' ? 'selected' : ''}`} onClick={() => setGoalMode('has')}>
+                <strong>
+                  <Target size={16} className="inline-icon" aria-hidden="true" />I have one in mind
+                </strong>
+                <span className="small muted">Pick it and we will show you your path to it, year by year.</span>
+              </button>
+              <button
+                className={`choice ${goalMode === 'find' ? 'selected' : ''}`}
+                onClick={() => {
+                  setGoalMode('find')
+                  setGoal(undefined)
+                }}
+              >
+                <strong>
+                  <Compass size={16} className="inline-icon" aria-hidden="true" />Help me find one
+                </strong>
+                <span className="small muted">Play a 3-minute game of "would you rather" and see three futures that fit you.</span>
+              </button>
+            </div>
+            {goalMode === 'has' && (
+              <label className="field">
+                <span>Career goal</span>
+                <select value={goal ?? ''} onChange={(e) => setGoal(e.target.value || undefined)} autoFocus>
+                  <option value="">Choose a career</option>
+                  {Object.entries(CLUSTER_NAMES).map(([cluster, label]) => (
+                    <optgroup key={cluster} label={label}>
+                      {CAREERS.filter((c) => c.cluster === cluster).map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.title}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </label>
+            )}
             <div className="row">
               <button className="btn" onClick={() => setStep(1)}>
                 Back
               </button>
-              <button className="btn primary" style={{ flex: 1 }} onClick={finish}>
-                {goal ? 'Show my roadmap 🚀' : 'Start exploring ✨'}
+              <button className="btn primary" style={{ flex: 1 }} onClick={finish} disabled={goalMode === 'has' && !goal}>
+                {goalMode === 'has' ? (
+                  <>
+                    Peer into my future <Rocket size={18} aria-hidden="true" />
+                  </>
+                ) : goalMode === 'find' ? (
+                  <>
+                    Start the finder <Compass size={18} aria-hidden="true" />
+                  </>
+                ) : (
+                  <>
+                    Skip for now <Sparkles size={18} aria-hidden="true" />
+                  </>
+                )}
               </button>
             </div>
           </div>
         )}
 
         <p className="small muted" style={{ marginTop: 20, textAlign: 'center' }}>
-          🔒 Everything is saved on this device only. No account, no uploads.
+          <Lock size={14} className="inline-icon" aria-hidden="true" />
+          Everything is saved on this device only. No account, no uploads.
         </p>
       </main>
     </div>

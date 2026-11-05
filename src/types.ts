@@ -176,6 +176,10 @@ export interface StudentState {
   profile: Profile | null
   goals: string[]
   discovery: DiscoveryResult | null
+  /** Answers from the scenario-based Career Finder, keyed by question id. */
+  finder: Record<string, string> | null
+  /** Career ids the student has opened a Future Preview for. */
+  previewed: string[]
   attempts: QuizAttempt[]
   /** ISO dates on which the student practised, for streak tracking. */
   activeDays: string[]
