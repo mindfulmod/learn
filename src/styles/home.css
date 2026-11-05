@@ -20,7 +20,14 @@
 .guide-steps a { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border-radius: 999px; background: var(--surface); color: var(--text); font-weight: 600; font-size: 0.88rem; }
 .guide-steps a:hover { text-decoration: none; box-shadow: var(--shadow-md); }
 .guide-steps .sep { color: var(--muted); }
-@media (max-width: 559px) { .guide-steps .sep { display: none; } }
+@media (max-width: 759px) {
+  .guide-strip { flex-direction: column; align-items: stretch; gap: 10px; }
+  .guide-strip > .row, .guide-strip > h3 { width: 100%; }
+  .guide-steps { flex-direction: column; align-items: stretch; width: 100%; }
+  .guide-steps a { justify-content: flex-start; }
+  .guide-steps .sep { display: none; }
+  .guide-strip .btn { align-self: flex-end; }
+}
 
 /* Level tile */
 .level-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
