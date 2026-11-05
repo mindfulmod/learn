@@ -111,7 +111,7 @@ export function Careers() {
                 </span>
               )}
             </b>
-            <span className="cr-row-line">{firstSentence(c.summary, 14)}</span>
+            <span className="cr-row-line">{firstSentence(c.summary, junior ? 8 : 14)}</span>
             {life && (
               <span className="cr-row-meta">
                 {junior ? <PayCoins life={life} /> : <span className="cr-row-pay">Rs {formatPkr(life.pay.entry[0])}+ /month to start</span>}

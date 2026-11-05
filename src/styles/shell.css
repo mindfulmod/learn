@@ -201,10 +201,16 @@
 .section-explore { --h: 320; }
 .section-practice { --h: 160; }
 .section-progress { --h: 140; }
-.page-header.themed { padding: 22px 24px; border-radius: var(--r-xl); background: var(--tint-soft); margin-bottom: 20px; align-items: center; }
-.page-header.themed .kicker { color: var(--tint-strong); }
-.page-header.themed .page-art { flex-shrink: 0; }
-@media (max-width: 640px) { .page-header.themed .page-art { display: none; } }
+/* Header tiers (iteration 5, after Duolingo's core-tabs refresh): tier 1 is Today and the Town
+   (no banner); tier 2 is a compact tinted band, title only, art at 64px; tier 3 is a plain title row. */
+.page-header.themed { padding: 14px 20px; min-height: 96px; border-radius: var(--r-xl); background: var(--tint-soft); margin-bottom: 20px; align-items: center; }
+.page-header.themed h1 { font-size: clamp(1.4rem, 2.6vw, 1.6rem); margin-bottom: 0; }
+.page-header.themed .lead { font-size: 0.95rem; margin-top: 2px; }
+.page-header.themed .kicker { color: var(--tint-strong); font-size: 0.72rem; }
+.page-header.themed .page-art { flex-shrink: 0; width: 64px; height: 64px; display: grid; place-items: center; }
+.page-header.themed .page-art > * { transform: scale(0.66); transform-origin: center; }
+.junior .page-header .lead { display: none; }
+@media (max-width: 640px) { .page-header.themed .page-art { display: none; } .page-header.themed { min-height: 0; } }
 
 /* Pastel tile cards (reference-style): soft fill, dark text, no shadow */
 .card.pastel { background: var(--tint-soft); border-color: transparent; box-shadow: none; }
@@ -313,6 +319,11 @@ body[data-quiz-done='1'] .shell.focus .statusbar { display: flex; }
 
 /* ---------- Context rail content (iteration 4) -------------------------- */
 .screen-rail > .card { margin-top: 0; }
+/* Whitespace, not containers: rail groups are plain, separated by space. */
+.screen-rail > .card, .screen-rail > .rail-group { background: none; border: 0; box-shadow: none; padding: 0 4px; }
+.screen-rail { gap: 26px; }
+.screen-rail > .card + .card, .screen-rail > .rail-group + .rail-group { padding-top: 22px; border-top: 1px solid var(--border); border-radius: 0; }
+@media (max-width: 1023px) { .screen-rail > .card, .screen-rail > .rail-group { padding-top: 0; border-top: 0; } }
 .rail-card .tile-label, .handoff .tile-label {
   display: flex; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 700;
   letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted);
