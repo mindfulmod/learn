@@ -8,11 +8,13 @@ import { scoreFinder } from '../engine/finder'
 import { modeFor } from '../engine/mode'
 import { buildProfile } from '../engine/profile'
 import { pathFor } from '../data/paths'
+import { isPictureAnswers } from '../data/pictureFinder'
 import { useStore } from '../store/store'
 import { CLUSTER_META, tint } from '../design'
 import { FuturePreview } from '../components/FuturePreview'
 import { Orb } from '../components/Orb'
 import { PageHeader } from '../components/PageHeader'
+import { PictureFinder } from './PictureFinder'
 import type { Career, CareerCluster } from '../types'
 import '../styles/finder.css'
 
@@ -50,8 +52,23 @@ function CareerFact({ id }: { id: string }) {
   )
 }
 
+/**
+ * Grades 1 to 5 in junior mode (or anyone holding picture answers) get the
+ * picture finder; everyone else gets the text finder. The picture finder can
+ * hand over to the word version for strong readers.
+ */
 export function Finder() {
+  const { state } = useStore()
+  const [forceText, setForceText] = useState(false)
+  const young = !!state.profile && modeFor(state.profile) === 'junior' && state.profile.grade <= 5
+  if (!forceText && (young || isPictureAnswers(state.finder))) return <PictureFinder onSwitch={() => setForceText(true)} />
+  return <TextFinder />
+}
+
+function TextFinder() {
   const { state, setFinder } = useStore()
+  // Picture answers belong to the picture finder; the text finder ignores them.
+  const finder = isPictureAnswers(state.finder) ? null : state.finder
 
   // Local game state.
   const [started, setStarted] = useState(false)
@@ -64,11 +81,11 @@ export function Finder() {
   useEffect(() => () => window.clearTimeout(timer.current), [])
 
   const profile = useMemo(() => buildProfile(state), [state])
-  const result = useMemo(() => (state.finder ? scoreFinder(state.finder, state, profile) : null), [state, profile])
+  const result = useMemo(() => (finder ? scoreFinder(finder, state, profile) : null), [finder, state, profile])
 
   const question = FINDER_QUESTIONS[index]
   const total = FINDER_QUESTIONS.length
-  const playing = !state.finder && started
+  const playing = !finder && started
 
   const choose = useCallback(
     (optionId: string) => {
@@ -122,7 +139,7 @@ export function Finder() {
   }
 
   // ---- A. Intro --------------------------------------------------------
-  if (!state.finder && !started) {
+  if (!finder && !started) {
     return (
       <div className="finder finder-welcome">
         <Orb hue={320} size={200} variant={1} />
@@ -142,7 +159,7 @@ export function Finder() {
   }
 
   // ---- B. Questions ----------------------------------------------------
-  if (!state.finder) {
+  if (!finder) {
     const current = answers[question.id]
     return (
       <div className="finder">
@@ -194,7 +211,7 @@ export function Finder() {
 
   // ---- C. Results ------------------------------------------------------
   if (!result) return null
-  const answered = state.finder
+  const answered = finder
   const junior = modeFor(state.profile) === 'junior'
   const byCluster = (c: CareerCluster) => result.careers.filter((r) => r.career.cluster === c).slice(0, 3)
   const previewBtn = (career: Career) => (

@@ -1,216 +1,229 @@
-import { useMemo, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useMemo, useRef, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, Compass, Eye, Lightbulb, Star } from 'lucide-react'
-import { CAREERS, CLUSTER_NAMES } from '../data/careers'
+import { CAREERS, getCareer } from '../data/careers'
 import { careerLife, formatPkr } from '../data/careerLife'
-import { PATHS, pathsForInterests } from '../data/paths'
+import { PATHS, pathFor, pathsForInterests, type PathMeta } from '../data/paths'
+import { PATH_WORD } from '../data/pictureFinder'
 import { CLUSTER_META, tint } from '../design'
 import { hasSignal, rankCareers } from '../engine/careers'
 import { modeFor } from '../engine/mode'
 import { buildProfile } from '../engine/profile'
 import { useStore } from '../store/store'
+import { CareerPane } from '../components/CareerPane'
 import { FuturePreview } from '../components/FuturePreview'
-import { IconTile } from '../components/ui'
+import { PayCoins } from '../components/PayBand'
 import { PageHeader } from '../components/PageHeader'
-import type { CareerCluster } from '../types'
-import '../styles/home.css'
+import { Screen } from '../components/Screen'
+import { IconTile } from '../components/ui'
+import type { Career, CareerCluster } from '../types'
+import '../styles/careers.css'
 
 const EXPLORE_HUE = 320
 
-/** The first sentence of a summary, capped at `max` words. */
-function firstSentence(text: string, max = 40): string {
-  const dot = text.indexOf('. ')
-  const s = (dot >= 0 ? text.slice(0, dot + 1) : text).trim()
+/** First sentence of a summary, capped at `max` words. */
+function firstSentence(text: string, max = 14): string {
+  const s = text.split(/(?<=[.!?])\s+/)[0].trim()
   const words = s.split(/\s+/)
   if (words.length <= max) return s
   return words.slice(0, max).join(' ').replace(/[.,;:!?]+$/, '') + '…'
 }
 
-function short(title: string): string {
+/** Title without the bracketed suffix. */
+function shortTitle(title: string): string {
   return title.split(' (')[0]
 }
 
-export function Careers() {
-  const { state } = useStore()
-  return modeFor(state.profile) === 'junior' ? <JuniorExplore /> : <SeniorExplore />
+function isCluster(v: string | null): v is CareerCluster {
+  return !!v && PATHS.some((p) => p.cluster === v)
 }
 
-// ------------------------------------------------------------------ Junior
-
-function JuniorExplore() {
+/**
+ * Explore as master-detail: the nine paths on the left, the chosen path's
+ * careers (or one career) on the right. Selection lives in the URL so the
+ * back button works, and nothing jumps to a new page.
+ */
+export function Careers() {
   const { state } = useStore()
-  const [params] = useSearchParams()
+  const junior = modeFor(state.profile) === 'junior'
+  const [params, setParams] = useSearchParams()
+  const [query, setQuery] = useState('')
   const [preview, setPreview] = useState<string | null>(null)
-  const path = PATHS.find((p) => p.cluster === params.get('path'))
-  const forYou = useMemo(() => pathsForInterests(state.interests).map((p) => p.cluster), [state.interests])
-  const ordered = useMemo(() => [...PATHS].sort((a, b) => (forYou.includes(a.cluster) ? forYou.indexOf(a.cluster) : 99) - (forYou.includes(b.cluster) ? forYou.indexOf(b.cluster) : 99)), [forYou])
+  const paneRef = useRef<HTMLElement>(null)
 
-  if (!path) {
+  const profile = useMemo(() => buildProfile(state), [state])
+  const signal = hasSignal(state)
+  const scores = useMemo(() => {
+    const m = new Map<string, number>()
+    if (signal) for (const r of rankCareers(state, profile)) m.set(r.career.id, r.score)
+    return m
+  }, [signal, state, profile])
+
+  const career = getCareer(params.get('career') ?? '')
+  const pathParam = params.get('path')
+  const forYou = useMemo(() => pathsForInterests(state.interests), [state.interests])
+  const cluster: CareerCluster = career?.cluster ?? (isCluster(pathParam) ? pathParam : (forYou[0]?.cluster ?? 'computing-data'))
+  const path = pathFor(cluster)
+  const q = junior ? '' : query.trim().toLowerCase()
+
+  const revealPane = () => {
+    const el = paneRef.current
+    if (el && el.getBoundingClientRect().top < 0) el.scrollIntoView({ block: 'start', behavior: 'smooth' })
+  }
+  const selectPath = (c: CareerCluster) => {
+    setQuery('')
+    setParams({ path: c })
+    revealPane()
+  }
+  const selectCareer = (id: string) => {
+    const c = getCareer(id)
+    if (!c) return
+    setParams({ path: c.cluster, career: id })
+    revealPane()
+  }
+  const backToPath = () => setParams({ path: cluster })
+
+  const byFit = (a: Career, b: Career) => (scores.get(b.id) ?? 0) - (scores.get(a.id) ?? 0)
+  const pathCareers = useMemo(() => {
+    const lead = (id: string) => {
+      const i = path.lead.indexOf(id)
+      return i < 0 ? 99 : i
+    }
+    return CAREERS.filter((c) => c.cluster === cluster).sort((a, b) => lead(a.id) - lead(b.id))
+  }, [cluster, path])
+  const searchHits = q ? CAREERS.filter((c) => c.title.toLowerCase().includes(q) || c.summary.toLowerCase().includes(q)).sort(byFit) : []
+
+  const row = (c: Career) => {
+    const meta = CLUSTER_META[c.cluster]
+    const life = careerLife(c.id)
+    const score = scores.get(c.id)
+    const isGoal = state.goals.includes(c.id)
     return (
-      <>
-        <PageHeader themed hue={EXPLORE_HUE} kicker="Explore" title="Which path looks fun?" />
-        <div className="grid cols-3 path-grid">
-          {ordered.map((p) => (
-            <Link key={p.cluster} to={`?path=${p.cluster}`} className="card pastel lift" style={tint(p.hue)}>
-              <div className="path-top">
-                <IconTile hue={p.hue} icon={CLUSTER_META[p.cluster].icon} />
-                {forYou.includes(p.cluster) && <span className="badge tinted">For you</span>}
-              </div>
-              <h3>{p.title}</h3>
-              <p>{p.promise}</p>
-            </Link>
-          ))}
-        </div>
-      </>
+      <li key={c.id} className="cr-row" style={tint(meta.hue)}>
+        <button type="button" className="cr-row-main" onClick={() => selectCareer(c.id)}>
+          <IconTile hue={meta.hue} icon={meta.icon} />
+          <span className="cr-row-body">
+            <b>
+              {shortTitle(c.title)}
+              {isGoal && (
+                <span className="badge primary cr-row-badge">
+                  <Star size={12} fill="currentColor" className="inline-icon" aria-hidden="true" /> Your goal
+                </span>
+              )}
+            </b>
+            <span className="cr-row-line">{firstSentence(c.summary, 14)}</span>
+            {life && (
+              <span className="cr-row-meta">
+                {junior ? <PayCoins life={life} /> : <span className="cr-row-pay">Rs {formatPkr(life.pay.entry[0])}+ /month to start</span>}
+                {!junior && score !== undefined && <span className={`badge ${score >= 70 ? 'good' : score >= 50 ? 'warn' : ''}`}>{score}% fit</span>}
+              </span>
+            )}
+          </span>
+        </button>
+        <button type="button" className="btn sm primary cr-row-preview" onClick={() => setPreview(c.id)}>
+          <Eye size={16} aria-hidden="true" /> Preview
+        </button>
+      </li>
     )
   }
 
-  const meta = CLUSTER_META[path.cluster]
-  const careers = CAREERS.filter((c) => c.cluster === path.cluster).sort((a, b) => {
-    const ia = path.lead.indexOf(a.id)
-    const ib = path.lead.indexOf(b.id)
-    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib)
-  })
-
-  return (
-    <>
-      <Link to="/careers" className="path-back">
-        <ArrowLeft size={18} aria-hidden="true" /> All paths
-      </Link>
-      <div style={tint(path.hue)}>
-        <PageHeader themed hue={path.hue} kicker="Explore" title={path.title} lead={path.promise} />
-      </div>
-      <section className="card" style={tint(path.hue)}>
-        <ul className="steps career-rows">
-          {careers.map((c) => (
-            <li key={c.id}>
-              <IconTile hue={path.hue} icon={meta.icon} />
-              <span className="step-body">
-                <b>{short(c.title)}</b>
-                <span>{firstSentence(c.summary, 14)}</span>
-              </span>
-              <button type="button" className="btn sm primary" onClick={() => setPreview(c.id)}>
-                <Eye size={16} aria-hidden="true" /> Preview
-              </button>
-            </li>
-          ))}
-        </ul>
-      </section>
-      {preview && <FuturePreview careerId={preview} onClose={() => setPreview(null)} />}
-    </>
+  const pathItem = (p: PathMeta) => (
+    <button
+      key={p.cluster}
+      type="button"
+      className={`master-item ${p.cluster === cluster ? 'active' : ''}`}
+      style={tint(p.hue)}
+      aria-current={p.cluster === cluster ? 'true' : undefined}
+      onClick={() => selectPath(p.cluster)}
+    >
+      <IconTile hue={p.hue} icon={CLUSTER_META[p.cluster].icon} />
+      <span className="cr-item-title">{p.title}</span>
+      {junior && <span className="badge tinted">{PATH_WORD[p.cluster]}</span>}
+    </button>
   )
-}
 
-// ------------------------------------------------------------------ Senior
-
-function SeniorExplore() {
-  const { state } = useStore()
-  const nav = useNavigate()
-  const [cluster, setCluster] = useState<CareerCluster | 'all'>('all')
-  const [query, setQuery] = useState('')
-  const [preview, setPreview] = useState<string | null>(null)
-  const profile = useMemo(() => buildProfile(state), [state])
-  const signal = hasSignal(state)
-  const ranked = useMemo(() => (signal ? rankCareers(state, profile) : CAREERS.map((career) => ({ career, score: null as number | null }))), [signal, state, profile])
-
-  const q = query.toLowerCase()
-  const visible = ranked.filter((r) => (cluster === 'all' || r.career.cluster === cluster) && (!q || r.career.title.toLowerCase().includes(q) || r.career.summary.toLowerCase().includes(q)))
+  let detail
+  if (career) {
+    detail = (
+      <>
+        <button type="button" className="cr-back" onClick={backToPath}>
+          <ArrowLeft size={16} aria-hidden="true" /> All {path.title}
+        </button>
+        <CareerPane key={career.id} careerId={career.id} onPreview={() => setPreview(career.id)} onRelated={selectCareer} />
+      </>
+    )
+  } else if (q) {
+    detail = (
+      <section className="card">
+        <h2 className="cr-list-title">Search results</h2>
+        {searchHits.length ? <ul className="cr-rows">{searchHits.map(row)}</ul> : <p className="muted">No careers match that search.</p>}
+      </section>
+    )
+  } else {
+    detail = (
+      <section className="card pastel cr-path" style={tint(path.hue)}>
+        <h2 className="cr-list-title">{path.title}</h2>
+        <p className="cr-promise">{path.promise}</p>
+        <ul className="cr-rows">{pathCareers.map(row)}</ul>
+      </section>
+    )
+  }
 
   return (
-    <>
-      <PageHeader
-        themed
-        hue={EXPLORE_HUE}
-        kicker="Explore"
-        title="Careers"
-        lead={signal ? 'Ranked by fit. Preview any to see your path.' : 'Preview any career to see your path, year by year.'}
-        action={
-          <Link to="/finder" className="btn sm">
-            <Compass size={16} aria-hidden="true" />
-            {state.finder ? 'My matches' : 'Not sure? Try the finder'}
-          </Link>
-        }
-      />
-
-      {!signal && state.finder && (
-        <Link to="/discover" className="btn" style={{ marginBottom: 20 }}>
-          <Lightbulb size={18} aria-hidden="true" /> Sharpen results with the discovery quiz
-        </Link>
-      )}
-
-      <div className="row section" style={{ alignItems: 'stretch', marginBottom: 14 }}>
-        <input className="search" type="text" placeholder="Search careers" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Search careers" />
+    <Screen
+      wide
+      header={
+        <PageHeader
+          themed
+          hue={EXPLORE_HUE}
+          kicker="Explore"
+          title={junior ? 'Which path looks fun?' : 'Careers'}
+          lead={junior ? undefined : 'Pick a path, then a career. Preview any to see your future.'}
+          action={
+            junior ? undefined : (
+              <Link to="/finder" className="btn sm">
+                <Compass size={16} aria-hidden="true" />
+                {state.finder ? 'My matches' : 'Not sure? Try the finder'}
+              </Link>
+            )
+          }
+        />
+      }
+    >
+      <div className="master-detail">
+        <nav className="master card cr-master" aria-label="Paths">
+          {!junior && (
+            <input className="search cr-search" type="search" placeholder="Search careers" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Search careers" />
+          )}
+          <div className="master-list cr-master-list">{PATHS.map(pathItem)}</div>
+          <div className="tabs pills cr-pills">
+            {PATHS.map((p) => {
+              const PathIcon = CLUSTER_META[p.cluster].icon
+              return (
+                <button
+                  key={p.cluster}
+                  type="button"
+                  className={`btn sm ${p.cluster === cluster ? 'active' : ''}`}
+                  style={tint(p.hue)}
+                  aria-pressed={p.cluster === cluster}
+                  onClick={() => selectPath(p.cluster)}
+                >
+                  <PathIcon size={14} aria-hidden="true" /> {junior ? PATH_WORD[p.cluster] : p.title}
+                </button>
+              )
+            })}
+          </div>
+          {!junior && !signal && state.finder && (
+            <Link to="/discover" className="cr-sharpen small">
+              <Lightbulb size={16} aria-hidden="true" /> Sharpen results with the discovery quiz
+            </Link>
+          )}
+        </nav>
+        <section className="detail-pane" ref={paneRef}>
+          {detail}
+        </section>
       </div>
-      <div className="tabs pills">
-        <button className={`btn sm ${cluster === 'all' ? 'active' : ''}`} onClick={() => setCluster('all')}>
-          All
-        </button>
-        {(Object.keys(CLUSTER_NAMES) as CareerCluster[]).map((c) => {
-          const ClusterIcon = CLUSTER_META[c].icon
-          return (
-            <button key={c} className={`btn sm ${cluster === c ? 'active' : ''}`} onClick={() => setCluster(c)}>
-              <ClusterIcon size={14} aria-hidden="true" /> {CLUSTER_NAMES[c]}
-            </button>
-          )
-        })}
-      </div>
-
-      {/* auto-fill: one column on phones, two on tablets, three on wide screens */}
-      <div className="grid cols-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))' }}>
-        {visible.map(({ career, score }) => {
-          const isGoal = state.goals.includes(career.id)
-          const meta = CLUSTER_META[career.cluster]
-          const life = careerLife(career.id)
-          const seen = state.previewed.includes(career.id)
-          return (
-            <div
-              key={career.id}
-              role="link"
-              tabIndex={0}
-              onClick={() => nav(`/careers/${career.id}`)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') nav(`/careers/${career.id}`)
-              }}
-              className="card lift career-card"
-              style={{ cursor: 'pointer', minWidth: 0, ...tint(meta.hue) }}
-            >
-              <div className="row between" style={{ alignItems: 'flex-start' }}>
-                <IconTile hue={meta.hue} icon={meta.icon} />
-                <span className="row" style={{ gap: 6 }}>
-                  {isGoal && (
-                    <span className="badge primary">
-                      <Star size={12} fill="currentColor" className="inline-icon" aria-hidden="true" />
-                      Your goal
-                    </span>
-                  )}
-                  {!isGoal && seen && <span className="badge">Previewed</span>}
-                  {score !== null && <span className={`badge ${score >= 70 ? 'good' : score >= 50 ? 'warn' : ''}`}>{score}% fit</span>}
-                </span>
-              </div>
-              <h3 style={{ overflowWrap: 'anywhere', marginTop: 12 }}>{career.title}</h3>
-              <p className="small" style={{ margin: '0 0 12px', color: 'var(--text-2)' }}>
-                {firstSentence(career.summary)}
-              </p>
-              {life && (
-                <p className="small muted" style={{ margin: '0 0 12px' }}>
-                  {life.yearsOfStudy + (life.training?.years ?? 0)} yrs study · Rs {formatPkr(life.pay.entry[0])}+ /month to start · {life.demand} demand
-                </p>
-              )}
-              <button
-                className="btn sm primary"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setPreview(career.id)
-                }}
-              >
-                <Eye size={16} aria-hidden="true" /> Preview my future
-              </button>
-            </div>
-          )
-        })}
-      </div>
-      {!visible.length && <p className="muted">No careers match that search.</p>}
       {preview && <FuturePreview careerId={preview} onClose={() => setPreview(null)} />}
-    </>
+    </Screen>
   )
 }

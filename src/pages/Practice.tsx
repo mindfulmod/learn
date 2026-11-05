@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { ArrowRight, BookOpen, Check, Dumbbell, Lightbulb, PartyPopper, RefreshCw, Sparkles, Target, ThumbsUp, Volume2, X, Zap } from 'lucide-react'
+import { ArrowRight, BookOpen, Check, Compass, Dumbbell, Eye, Flag, Lightbulb, PartyPopper, RefreshCw, Sparkles, Target, ThumbsUp, Volume2, X, Zap, type LucideIcon } from 'lucide-react'
 import { bandForGrade, BOARD_GRADES } from '../data/boards'
 import { getCareer } from '../data/careers'
 import { lessonFor } from '../data/lessons'
@@ -9,10 +9,12 @@ import { getSubject, subjectName } from '../data/subjects'
 import { modeFor, speak } from '../engine/mode'
 import { buildProfile, subjectStrength, type MasteryLevel } from '../engine/profile'
 import { buildQuiz, QUIZ_LENGTH, summariseAttempt } from '../engine/quiz'
-import { attemptXp, levelFor, totalXp, XP } from '../engine/xp'
+import { attemptXp, levelFor, nextStep, totalXp, XP, type NextStep } from '../engine/xp'
 import { useStore } from '../store/store'
 import type { GradeBand, QuizAttempt, QuizItem } from '../types'
-import { LevelBadge, SubjectTile } from '../components/ui'
+import { IconTile, LevelBadge, SubjectTile } from '../components/ui'
+import { Screen } from '../components/Screen'
+import { ContextRail } from '../components/ContextRail'
 import { PageHeader } from '../components/PageHeader'
 import { Ring } from '../components/Ring'
 import { Celebrate } from '../components/Celebrate'
@@ -23,6 +25,19 @@ const BANDS: GradeBand[] = ['1-5', '6-8', '9-10', '11-12']
 const LETTER_HUES = [258, 320, 36, 160]
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F']
 const URDU = /[؀-ۿ]/
+
+const KIND_META: Record<Exclude<NextStep['kind'], 'practice'>, { hue: number; icon: LucideIcon }> = {
+  finder: { hue: 320, icon: Compass },
+  preview: { hue: 215, icon: Eye },
+  discovery: { hue: 45, icon: Lightbulb },
+  goal: { hue: 258, icon: Flag },
+}
+
+function stepLook(step: NextStep): { hue: number; icon: LucideIcon } {
+  if (step.kind !== 'practice') return KIND_META[step.kind]
+  const s = step.subjectId ? getSubject(step.subjectId) : undefined
+  return { hue: s ? AREA_META[s.area].hue : 160, icon: subjectIcon(step.subjectId ?? '', s?.area) }
+}
 
 const JUNIOR_STATUS: Record<MasteryLevel, string> = {
   'not-practised': 'Not started',
@@ -61,15 +76,19 @@ export function Practice() {
   const sorted = [...subjects].sort((a, b) => Number(must.has(b)) - Number(must.has(a)) || subjectName(a).localeCompare(subjectName(b)))
 
   return (
-    <>
-      <PageHeader
-        kicker="Practice"
-        title="Pick a subject"
-        lead={junior ? 'Learn a little, then try a few.' : `${QUIZ_LENGTH} questions a round. Harder when you're winning, kinder when you're not.`}
-        themed
-        hue={160}
-        variant={1}
-      />
+    <Screen
+      header={
+        <PageHeader
+          kicker="Practice"
+          title="Pick a subject"
+          lead={junior ? undefined : `${QUIZ_LENGTH} questions a round. Harder when you're winning, kinder when you're not.`}
+          themed
+          hue={160}
+          variant={1}
+        />
+      }
+      rail={<ContextRail />}
+    >
       <div className="tabs pills" role="tablist" aria-label="Grade band">
         {BANDS.map((b) => (
           <button key={b} role="tab" aria-selected={band === b} className={`btn sm ${band === b ? 'active' : ''}`} onClick={() => setBand(b)}>
@@ -114,7 +133,7 @@ export function Practice() {
       <p className="small muted practice-note">
         Grades on this track: {BOARD_GRADES[p.boardId][0]}-{BOARD_GRADES[p.boardId].at(-1)}. You can practise any band, but only your own band counts toward goal readiness.
       </p>
-    </>
+    </Screen>
   )
 }
 
@@ -157,15 +176,15 @@ function Quiz({ subjectId, band: initialBand }: { subjectId: string; band: Grade
   const subject = subjectName(subjectId)
 
   const readAloud = (text: string) => setNoVoice(!speak(text))
+  const step = useMemo(() => nextStep(state), [state])
 
   if (!items.length) {
     return (
-      <>
-        <PageHeader kicker="Practice" title={subject} lead={`No practice questions for grades ${band} in this subject yet.`} />
+      <Screen header={<PageHeader kicker="Practice" title={subject} lead={`No practice questions for grades ${band} in this subject yet.`} />}>
         <Link to="/practice" className="btn">
-          Back to practice
+          Back to Practice
         </Link>
-      </>
+      </Screen>
     )
   }
 

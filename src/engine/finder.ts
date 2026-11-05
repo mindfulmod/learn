@@ -1,7 +1,8 @@
 import { CAREERS } from '../data/careers'
 import { FINDER_QUESTIONS } from '../data/finder'
+import { PICTURE_PREFIX, PICTURE_ROUNDS } from '../data/pictureFinder'
 import type { Career, CareerCluster, StudentState, Trait } from '../types'
-import { rankCareers } from './careers'
+import { hasSignal, rankCareers } from './careers'
 import type { StrengthProfile } from './profile'
 
 export const CLUSTERS: CareerCluster[] = [
@@ -51,6 +52,39 @@ export function scoreFinder(answers: Record<string, string>, state: StudentState
 
   const fits = rankCareers(state, profile)
   const hasFit = !!state.discovery || state.attempts.length > 0
+  const careers = CAREERS.map((career) => {
+    const clusterScore = clusters[career.cluster]
+    const fit = fits.find((f) => f.career.id === career.id)?.score ?? 50
+    const score = hasFit ? Math.round(clusterScore * 0.6 + fit * 0.4) : clusterScore
+    return { career, score }
+  }).sort((a, b) => b.score - a.score)
+
+  return { clusters, topClusters, careers }
+}
+
+/**
+ * Score the picture finder (grades 1 to 5). Answers are keyed by round id
+ * with `picture:<sceneId>` values. Same normalisation and career blend as
+ * scoreFinder, so both finders return the same result shape.
+ */
+export function scorePictureFinder(answers: Record<string, string>, state: StudentState, profile: StrengthProfile): FinderResult {
+  const sum = Object.fromEntries(CLUSTERS.map((c) => [c, 0])) as Record<CareerCluster, number>
+
+  for (const round of PICTURE_ROUNDS) {
+    const value = answers[round.id]
+    if (!value?.startsWith(PICTURE_PREFIX)) continue
+    const id = value.slice(PICTURE_PREFIX.length)
+    const chosen = round.scenes.find((s) => s.id === id)
+    if (!chosen) continue
+    for (const [c, w] of Object.entries(chosen.clusters) as [CareerCluster, number][]) sum[c] += w
+  }
+
+  const best = Math.max(...Object.values(sum), 0.0001)
+  const clusters = Object.fromEntries(CLUSTERS.map((c) => [c, Math.round((sum[c] / best) * 92)])) as Record<CareerCluster, number>
+  const topClusters = [...CLUSTERS].sort((a, b) => clusters[b] - clusters[a]).slice(0, 3)
+
+  const fits = rankCareers(state, profile)
+  const hasFit = hasSignal(state)
   const careers = CAREERS.map((career) => {
     const clusterScore = clusters[career.cluster]
     const fit = fits.find((f) => f.career.id === career.id)?.score ?? 50

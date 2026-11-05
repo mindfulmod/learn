@@ -78,3 +78,17 @@
 .career-rows .step-body b { overflow-wrap: anywhere; }
 .career-rows .step-body span { display: block; }
 @media (max-width: 420px) { .career-rows li { flex-wrap: wrap; } .career-rows .btn { margin-left: 56px; } }
+
+/* ---------------------------------------------------------------- Today, iteration 4 */
+/* Main column: hero across, then a pair of cards, then strengths. The rail carries the rest. */
+.home-senior .tile.hero-tile { min-height: 240px; }
+.home-senior .tile.hero-tile .hero-copy { max-width: 52ch; }
+.home-pair { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 760px) { .home-pair { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.home-pair > .card { margin-top: 0; min-width: 0; }
+.home-senior .tile h3, .home-senior .tile b { overflow-wrap: anywhere; }
+.strengths-tile .strength-meters { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px 20px; }
+@media (min-width: 760px) { .strengths-tile .strength-meters { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.home-junior .path-tiles { grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 640px) { .home-junior .path-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.home-junior > .section:last-child, .home-senior > .card:last-child { margin-bottom: 0; }

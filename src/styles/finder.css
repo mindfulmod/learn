@@ -136,3 +136,75 @@
   .finder-option:hover:not(:disabled), .finder-option.selected .finder-letter,
   .finder-option:hover:not(:disabled) .finder-letter { transform: none; }
 }
+
+/* ---------- Picture finder (grades 1 to 5) ------------------------------ */
+.pf { max-width: 760px; }
+.pf .btn { min-height: 56px; padding: 12px 22px; font-size: 1.05rem; }
+.pf .btn.icon-only { width: 56px; padding: 0; justify-content: center; flex-shrink: 0; }
+.finder-welcome.pf { max-width: 640px; }
+.finder-welcome.pf h1 { margin-bottom: 24px; }
+.pf-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+.pf .pf-start { min-height: 64px; padding: 14px 34px; font-size: 1.2rem; }
+
+.pf-dots { justify-content: center; gap: 10px; margin-bottom: 18px; }
+.pf-dots span { flex: 0 0 14px; width: 14px; height: 14px; }
+
+.pf-prompt { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 20px; text-align: center; }
+.pf-prompt .finder-prompt, .pf-prompt h1 { margin: 0; min-width: 0; }
+
+.pf-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 559px) { .pf-choices { grid-template-columns: 1fr; gap: 14px; } }
+
+.scene-choice {
+  display: flex; flex-direction: column; align-items: center; gap: 12px; min-width: 0; min-height: 56px; width: 100%;
+  padding: 12px 12px 16px; font: inherit; color: var(--text); background: var(--surface);
+  border: 3px solid var(--border); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s, box-shadow 0.18s, opacity 0.2s;
+}
+.scene-choice:hover:not(:disabled) { transform: translateY(-3px); border-color: var(--tint); box-shadow: 0 14px 28px -12px var(--tint-glow); }
+.scene-choice:active:not(:disabled) { transform: scale(0.98); }
+.scene-choice:focus-visible { outline: none; border-color: var(--tint); box-shadow: 0 0 0 5px var(--tint-glow); }
+.scene-choice.selected { border-color: var(--tint); background: var(--tint-soft); box-shadow: 0 0 0 5px var(--tint-glow); }
+.scene-choice.popped { animation: finder-pop 0.38s cubic-bezier(0.2, 0.8, 0.2, 1.4) both; }
+.scene-choice:disabled { cursor: default; opacity: 0.45; }
+.scene-label { font-size: 1.1rem; font-weight: 800; line-height: 1.25; text-align: center; overflow-wrap: anywhere; }
+
+.scene {
+  position: relative; display: block; width: 100%; aspect-ratio: 4 / 3; border-radius: 20px; overflow: hidden;
+}
+.scene-bg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.scene-disc {
+  position: absolute; left: 50%; top: 50%; width: 48%; aspect-ratio: 1; transform: translate(-50%, -50%);
+  display: grid; place-items: center; border-radius: 50%; background: #fff;
+  box-shadow: 0 10px 24px -10px hsl(var(--h) 60% 30% / 0.45);
+}
+.scene-disc svg { width: 71%; height: 71%; }
+.scene-prop {
+  position: absolute; right: 6%; bottom: 7%; width: 24%; aspect-ratio: 1; display: grid; place-items: center;
+  border-radius: 50%; background: var(--tint); color: #fff;
+}
+.scene-prop svg { width: 64%; height: 64%; }
+
+.pf-back { display: flex; margin: 18px auto 0; min-height: 56px; padding: 8px 16px; }
+.pf-switch {
+  display: inline-flex; align-items: center; min-height: 44px; margin-top: 12px; padding: 0 12px; border: 0; background: none;
+  font: inherit; font-weight: 600; color: var(--muted); cursor: pointer; text-decoration: underline; text-underline-offset: 3px;
+}
+.pf-switch:hover { color: var(--brand-strong); }
+
+.pf-result-head h1 { font-size: clamp(1.8rem, 6vw, 2.6rem); letter-spacing: -0.03em; }
+.pf-results { align-items: stretch; }
+.pf-path {
+  display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; min-width: 0;
+  animation: rise 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.pf-path h2 { margin: 6px 0 0; font-size: 1.7rem; color: var(--tint-strong); overflow-wrap: anywhere; }
+.pf-path-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: auto; padding-top: 12px; width: 100%; }
+.pf-path-actions .btn { flex: 1 1 110px; justify-content: center; }
+.pf-foot { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .scene-choice.popped, .pf-path { animation: none; }
+  .scene-choice { transition: none; }
+  .scene-choice:hover:not(:disabled) { transform: none; }
+}

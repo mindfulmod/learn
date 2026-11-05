@@ -1,0 +1,83 @@
+/* ---------- Explore: master-detail (iteration 4) ---------------------- */
+
+/* Master: list of paths on desktop, pill scroller on phones. */
+.cr-master { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.cr-search { width: 100%; max-width: none; }
+.cr-item-title { flex: 1; min-width: 0; overflow-wrap: anywhere; line-height: 1.25; }
+.master-item .badge { flex-shrink: 0; }
+.cr-pills { display: none; }
+.cr-sharpen { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; min-height: 40px; }
+
+@media (max-width: 1023.98px) {
+  .cr-master { padding: 0; background: transparent; border: 0; box-shadow: none; gap: 10px; }
+  .cr-master-list { display: none; }
+  .cr-pills { display: flex; margin-bottom: 0; width: 100%; }
+  .cr-pills button.active { color: var(--tint-strong); }
+  .cr-pills svg { color: var(--tint-strong); }
+}
+
+/* Detail pane */
+.detail-pane { min-width: 0; scroll-margin-top: 16px; }
+.cr-back {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font-weight: 600; margin-bottom: 6px;
+  background: none; border: 0; padding: 0; color: var(--brand-strong); cursor: pointer; font: inherit; font-weight: 600;
+}
+.cr-back:hover { text-decoration: underline; }
+
+.cr-list-title { margin: 0 0 4px; color: var(--tint-strong); overflow-wrap: anywhere; }
+.cr-promise { margin: 0 0 8px; color: var(--text-2); }
+
+/* Career rows inside a path */
+.cr-rows { list-style: none; margin: 0; padding: 0; }
+.cr-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); min-width: 0; }
+.cr-row:last-child { border-bottom: 0; }
+.cr-row-main {
+  display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; min-height: 48px;
+  background: none; border: 0; padding: 6px; margin: -6px; border-radius: 14px; color: inherit; font: inherit; text-align: left; cursor: pointer;
+}
+.cr-row-main:hover { background: var(--surface); }
+.cr-row-main:focus-visible { outline: 2px solid var(--tint-strong); outline-offset: 2px; }
+.cr-row-main .tile-icon { flex-shrink: 0; }
+.cr-row-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.cr-row-body b { overflow-wrap: anywhere; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.cr-row-badge { font-size: 0.7rem; }
+.cr-row-line { font-size: 0.88rem; color: var(--text-2); max-width: 60ch; }
+.cr-row-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 4px; font-size: 0.82rem; }
+.cr-row-pay { font-weight: 700; color: var(--text-2); }
+.cr-row-meta .paycoins svg { width: 15px; height: 15px; }
+.cr-row-preview { flex-shrink: 0; }
+@media (max-width: 480px) {
+  .cr-row { flex-wrap: wrap; }
+  .cr-row-preview { margin-left: 62px; }
+}
+
+/* One career, inline */
+.cr-pane { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.cr-head { display: flex; flex-direction: column; gap: 12px; }
+.cr-head-top { display: flex; align-items: flex-start; gap: 14px; min-width: 0; }
+.cr-head-text { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.cr-head .badge.tinted { background: var(--surface); }
+.cr-title { margin: 0; font-size: clamp(1.35rem, 1.1rem + 1.2vw, 1.9rem); line-height: 1.15; overflow-wrap: anywhere; }
+.cr-fit { flex-shrink: 0; }
+.cr-summary { margin: 0; color: var(--text-2); }
+.cr-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.cr-actions .btn { max-width: 100%; }
+.cr-head .cr-actions .btn:not(.primary) { background: var(--surface); }
+
+.cr-pay { padding-top: 18px; padding-bottom: 18px; }
+
+.cr-stats { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); }
+.cr-stats .stat { min-width: 0; }
+.cr-stats .stat > div { min-width: 0; display: flex; flex-direction: column; }
+.cr-stats .stat b { overflow-wrap: anywhere; }
+.cr-stats .stat span:not(.icon) { font-size: 0.82rem; color: var(--text-2); }
+.cr-stats .paycoins { font-size: 0.95rem; }
+.cr-stats .paycoins span { color: var(--text); }
+
+.cr-two { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1200px) { .cr-two { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.cr-two .card { min-width: 0; overflow-wrap: anywhere; }
+
+.cr-more-body { display: flex; flex-direction: column; gap: 16px; margin-top: 14px; }
+.cr-chip { border: 0; cursor: pointer; font-family: inherit; }
+.cr-chip:hover { background: var(--tint-soft); color: var(--tint-strong); }

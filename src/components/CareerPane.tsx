@@ -17,13 +17,13 @@ import { PayBand, PayCoins } from './PayBand'
 import '../styles/careers.css'
 
 /** Split text into sentences and keep the first `n` (word budget: two at most). */
-export function sentences(text: string, n = 2): string {
+function sentences(text: string, n = 2): string {
   const parts = text.split(/(?<=[.!?])\s+/)
   return parts.slice(0, n).join(' ')
 }
 
 /** First sentence, capped at `max` words. */
-export function firstSentence(text: string, max = 14): string {
+function firstSentence(text: string, max = 14): string {
   const s = sentences(text, 1).trim()
   const words = s.split(/\s+/)
   if (words.length <= max) return s
@@ -31,7 +31,7 @@ export function firstSentence(text: string, max = 14): string {
 }
 
 /** Title without the bracketed suffix, e.g. "Doctor (MBBS)" becomes "Doctor". */
-export function shortTitle(title: string): string {
+function shortTitle(title: string): string {
   return title.split(' (')[0]
 }
 
