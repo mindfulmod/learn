@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { Compass, Flame, Home, Map as MapIcon, Settings, Sparkles, Target, TrendingUp, Zap } from 'lucide-react'
+import { modeFor } from '../engine/mode'
 import { levelFor, totalXp } from '../engine/xp'
 import { streak } from '../engine/profile'
 import { useStore } from '../store/store'
@@ -23,9 +24,11 @@ export function Layout() {
   const level = levelFor(xp)
   const st = streak(state.activeDays)
   const focus = /^\/practice\/[^/]+/.test(loc.pathname) || (loc.pathname === '/finder' && state.finder === null)
+  const mode = modeFor(state.profile)
+  const section = loc.pathname === '/' ? 'today' : loc.pathname.startsWith('/path') || loc.pathname.startsWith('/curriculum') ? 'path' : loc.pathname.startsWith('/careers') || loc.pathname.startsWith('/finder') || loc.pathname.startsWith('/discover') ? 'explore' : loc.pathname.startsWith('/practice') ? 'practice' : loc.pathname.startsWith('/progress') ? 'progress' : 'today'
 
   return (
-    <div className={`shell ${focus ? 'focus' : ''}`}>
+    <div className={`shell ${focus ? 'focus' : ''} ${mode} section-${section}`}>
       <aside className="sidebar" aria-label="Main navigation">
         <Link to="/" className="brand">
           <img src={`${base}favicon.svg`} alt="" />

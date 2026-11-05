@@ -148,7 +148,12 @@ export interface Profile {
   boardId: BoardId
   streamId?: string
   createdAt: string
+  /** Interface density. Derived from grade unless set explicitly. */
+  mode?: 'junior' | 'senior'
 }
+
+/** Light-weight interest tags a student picks on the home screen. */
+export type InterestId = 'make' | 'puzzles' | 'help' | 'nature' | 'stories' | 'organise' | 'lead' | 'design'
 
 export interface DiscoveryResult {
   answers: Record<string, number>
@@ -180,6 +185,8 @@ export interface StudentState {
   finder: Record<string, string> | null
   /** Career ids the student has opened a Future Preview for. */
   previewed: string[]
+  /** Interests chosen on the home screen. */
+  interests: InterestId[]
   attempts: QuizAttempt[]
   /** ISO dates on which the student practised, for streak tracking. */
   activeDays: string[]

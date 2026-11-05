@@ -1,11 +1,11 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useMemo, useReducer, type ReactNode } from 'react'
 import { todayKey } from '../engine/profile'
-import type { DiscoveryResult, Profile, QuizAttempt, StudentState } from '../types'
+import type { DiscoveryResult, InterestId, Profile, QuizAttempt, StudentState } from '../types'
 
 const KEY = 'rahnuma.v1'
 
-export const EMPTY: StudentState = { version: 1, profile: null, goals: [], discovery: null, finder: null, previewed: [], attempts: [], activeDays: [] }
+export const EMPTY: StudentState = { version: 1, profile: null, goals: [], discovery: null, finder: null, previewed: [], interests: [], attempts: [], activeDays: [] }
 
 type Action =
   | { type: 'set-profile'; profile: Profile }
@@ -13,6 +13,7 @@ type Action =
   | { type: 'set-discovery'; discovery: DiscoveryResult }
   | { type: 'set-finder'; answers: Record<string, string> | null }
   | { type: 'mark-previewed'; careerId: string }
+  | { type: 'set-interests'; interests: InterestId[] }
   | { type: 'add-attempt'; attempt: QuizAttempt }
   | { type: 'import'; state: StudentState }
   | { type: 'reset' }
@@ -27,6 +28,8 @@ function reducer(state: StudentState, action: Action): StudentState {
       return { ...state, discovery: action.discovery, activeDays: addDay(state.activeDays) }
     case 'set-finder':
       return { ...state, finder: action.answers, activeDays: action.answers ? addDay(state.activeDays) : state.activeDays }
+    case 'set-interests':
+      return { ...state, interests: action.interests.slice(0, 4) }
     case 'mark-previewed':
       return state.previewed.includes(action.careerId) ? state : { ...state, previewed: [...state.previewed, action.careerId] }
     case 'add-attempt':
@@ -53,6 +56,7 @@ export function sanitise(raw: unknown): StudentState {
     discovery: r.discovery && r.discovery.traits ? r.discovery : null,
     finder: r.finder && typeof r.finder === 'object' ? r.finder : null,
     previewed: Array.isArray(r.previewed) ? r.previewed.filter((p) => typeof p === 'string') : [],
+    interests: Array.isArray(r.interests) ? (r.interests.filter((i) => typeof i === 'string') as InterestId[]) : [],
     attempts: Array.isArray(r.attempts) ? r.attempts.filter((a) => a && typeof a.subjectId === 'string') : [],
     activeDays: Array.isArray(r.activeDays) ? r.activeDays.filter((d) => typeof d === 'string') : [],
   }
@@ -74,6 +78,7 @@ interface Store {
   setDiscovery: (d: DiscoveryResult) => void
   setFinder: (answers: Record<string, string> | null) => void
   markPreviewed: (careerId: string) => void
+  setInterests: (interests: InterestId[]) => void
   addAttempt: (a: QuizAttempt) => void
   importState: (s: StudentState) => void
   reset: () => void
@@ -100,6 +105,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setDiscovery: (discovery) => dispatch({ type: 'set-discovery', discovery }),
       setFinder: (answers) => dispatch({ type: 'set-finder', answers }),
       markPreviewed: (careerId) => dispatch({ type: 'mark-previewed', careerId }),
+      setInterests: (interests) => dispatch({ type: 'set-interests', interests }),
       addAttempt: (attempt) => dispatch({ type: 'add-attempt', attempt }),
       importState: (s) => dispatch({ type: 'import', state: s }),
       reset: () => dispatch({ type: 'reset' }),

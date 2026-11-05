@@ -57,3 +57,22 @@ Every page uses the same header: kicker, title, one-line lead, optional primary 
 ## Copy voice
 
 Second person, warm, concrete. "Next up: 8 Biology questions, about 6 minutes." Never "You failed", never "incomplete", never "kids".
+
+## Density and age modes (added after review of the Raah prototype)
+
+What the Raah prototype gets right and we adopt: one sentence and one button on the home screen; interests as tappable pills instead of a quiz; paths named as aspirations ("Care for people") not job titles; teach-then-try activities (concept, worked example, then questions, with hints and read-aloud); numbered 1-2-3 next steps; pastel tiles so every card looks different; "no timer, no penalty" tone.
+
+### Two modes
+- **Junior** (grades 1-8, or chosen in Settings): one idea per screen. Home = hero sentence + one button, "What are you curious about?" pills, three paths, three numbered next steps, one coach line. No percentages, no XP arithmetic in copy, no fit scores. Bigger type, read-aloud on every long text. Explore shows nine paths as pastel tiles; a path opens two or three careers as one-line cards with a Preview. Preview is shortened to three steps (meet, journey, first step). Practice starts with a 3-sentence lesson and an example before questions.
+- **Senior** (grades 9-12): the full suite, but every lead is one line, details collapse behind "More", and tiles carry one number each.
+
+### Word budget
+- Hero: title ≤ 6 words, lead ≤ 12 words.
+- Tile: label + one line (≤ 10 words).
+- Card body on junior: ≤ 14 words.
+- Coach note: title ≤ 7 words, body ≤ 18 words.
+
+### Differentiation
+- Every primary section has a hue (Today violet, My Path amber, Explore pink, Practice mint, Progress green) applied to its header art, tiles and active nav.
+- Card forms vary on purpose: gradient hero, pastel tile, plain white card, bordered row. Never a screen of identical white cards.
+- Paths use distinct pastel tiles and icons; subjects use their area hue; careers use their cluster hue.
