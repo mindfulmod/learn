@@ -9,6 +9,12 @@ const CAM = ['cambridge'] as const
  * Outlines follow the Single National Curriculum (grades 1-8), the national
  * scheme of studies for SSC/HSSC, and Cambridge O/A Level syllabi. They are
  * summaries for guidance, not the official documents.
+ *
+ * Grades 9 and 10 for Mathematics, Physics, Chemistry, Biology and Computer
+ * Science list the chapters of the current Punjab textbook board books in
+ * book order. Grade 9 follows the PECTAA smart syllabus and pairing schemes
+ * for the 2026 annual exam. Grade 10 comes from unofficial study-site lists
+ * and still needs checking against the textbooks.
  */
 export const SUBJECTS: Subject[] = [
   // ---------------------------------------------------------------- Foundation
@@ -56,7 +62,8 @@ export const SUBJECTS: Subject[] = [
       { grades: [1, 3], name: 'Number sense', topics: ['Counting to 1000', 'Addition and subtraction', 'Introduction to multiplication and division', 'Shapes and patterns', 'Money, time and calendar', 'Measurement with units'] },
       { grades: [4, 5], name: 'Operations and fractions', topics: ['Long multiplication and division', 'Factors, multiples, HCF and LCM', 'Fractions and decimals', 'Percentages', 'Angles and triangles', 'Perimeter and area', 'Bar graphs and averages'] },
       { grades: [6, 8], name: 'Pre-algebra and geometry', topics: ['Integers and rational numbers', 'Ratio, rate and proportion', 'Algebraic expressions and linear equations', 'Exponents and square roots', 'Geometry: lines, angles, polygons, circles', 'Pythagoras theorem', 'Statistics: mean, median, mode', 'Sets and Venn diagrams'] },
-      { grades: [9, 10], name: 'SSC Mathematics (Science group)', topics: ['Matrices and determinants', 'Real and complex numbers', 'Logarithms', 'Algebraic expressions and formulas', 'Factorisation', 'Linear and quadratic equations', 'Theory of quadratic equations', 'Variations', 'Partial fractions', 'Sets and functions', 'Basic statistics', 'Introduction to trigonometry', 'Geometry theorems: congruent triangles, parallelograms, chords of a circle', 'Practical geometry'] },
+      { grades: [9, 9], name: 'Grade 9 Mathematics', topics: ['Real numbers', 'Logarithms', 'Sets and functions', 'Factorization and algebraic manipulation', 'Linear equations and inequalities', 'Trigonometry', 'Coordinate geometry', 'Logic', 'Similar figures', 'Graphs of functions', 'Loci and construction', 'Information handling', 'Probability'] },
+      { grades: [10, 10], name: 'Grade 10 Mathematics', topics: ['Complex numbers', 'Quadratic equations and inequalities', 'Matrices and determinants', 'Functions and graphs', 'Algebraic fractions', 'Vectors in plane', 'Trigonometry', 'Chords and arcs of a circle', 'Tangent and angles of a circle', 'Practical geometry of circles', 'Information handling', 'Probability'] },
       { grades: [11, 12], name: 'HSSC Mathematics', topics: ['Number systems', 'Sets, functions and groups', 'Matrices and determinants', 'Quadratic equations', 'Partial fractions', 'Sequences and series', 'Permutation, combination and probability', 'Mathematical induction and binomial theorem', 'Trigonometric functions and identities', 'Functions and limits', 'Differentiation and its applications', 'Integration', 'Analytical geometry: straight line, conic sections', 'Linear inequalities and programming', 'Vectors'] },
     ],
   },
@@ -163,8 +170,8 @@ export const SUBJECTS: Subject[] = [
     boards: [...ALL],
     grades: [9, 12],
     units: [
-      { grades: [9, 9], name: 'Grade 9 Physics', topics: ['Physical quantities and measurement', 'Kinematics', 'Dynamics', 'Turning effect of forces', 'Gravitation', 'Work and energy', 'Properties of matter', 'Thermal properties of matter', 'Transfer of heat'] },
-      { grades: [10, 10], name: 'Grade 10 Physics', topics: ['Simple harmonic motion and waves', 'Sound', 'Geometrical optics', 'Electrostatics', 'Current electricity', 'Electromagnetism', 'Basic electronics', 'Information and communication technology', 'Atomic and nuclear physics'] },
+      { grades: [9, 9], name: 'Grade 9 Physics', topics: ['Physical quantities and measurements', 'Kinematics', 'Dynamics', 'Turning effects of force', 'Work, energy and power', 'Mechanical properties of matter', 'Thermal properties of matter', 'Magnetism', 'Nature of science'] },
+      { grades: [10, 10], name: 'Grade 10 Physics', topics: ['Thermal physics', 'Transfer of thermal energy', 'Waves', 'Sound', 'Light', 'Electrostatics', 'Electricity', 'Electromagnetism', 'Electromagnetic induction and electromagnetic waves', 'Electronics', 'Atomic and nuclear physics', 'Space and environment'] },
       { grades: [11, 11], name: 'Grade 11 Physics', topics: ['Measurements', 'Vectors and equilibrium', 'Motion and force', 'Work and energy', 'Circular motion', 'Fluid dynamics', 'Oscillations', 'Waves', 'Physical optics', 'Optical instruments', 'Heat and thermodynamics'] },
       { grades: [12, 12], name: 'Grade 12 Physics', topics: ['Electrostatics', 'Current electricity', 'Electromagnetism', 'Electromagnetic induction', 'Alternating current', 'Physics of solids', 'Electronics', 'Dawn of modern physics', 'Atomic spectra', 'Nuclear physics'] },
     ],
@@ -178,8 +185,8 @@ export const SUBJECTS: Subject[] = [
     boards: [...ALL],
     grades: [9, 12],
     units: [
-      { grades: [9, 9], name: 'Grade 9 Chemistry', topics: ['Fundamentals of chemistry', 'Structure of atoms', 'Periodic table and periodicity', 'Structure of molecules', 'Physical states of matter', 'Solutions', 'Electrochemistry', 'Chemical reactivity'] },
-      { grades: [10, 10], name: 'Grade 10 Chemistry', topics: ['Chemical equilibrium', 'Acids, bases and salts', 'Organic chemistry', 'Hydrocarbons', 'Biochemistry', 'Environmental chemistry (atmosphere and water)', 'Chemical industries'] },
+      { grades: [9, 9], name: 'Grade 9 Chemistry', topics: ['States of matter and phase change', 'Atomic structure', 'Chemical bonding', 'Stoichiometry', 'Energetics', 'Equilibria', 'Acid base chemistry', 'Periodic table and periodicity', 'Group properties and elements', 'Environmental chemistry', 'Hydrocarbons', 'Empirical data collection and analysis', 'Laboratory and practical skills'] },
+      { grades: [10, 10], name: 'Grade 10 Chemistry', topics: ['States of matter and phase changes', 'Stoichiometry', 'Electrochemistry', 'Reaction kinetics', 'Salts', 'Nitrogen and sulphur', 'Water', 'Organic chemistry', 'Hydrocarbons', 'Monohydroxy alkanes or alcohols', 'Carboxylic acids', 'Polymers'] },
       { grades: [11, 11], name: 'Grade 11 Chemistry', topics: ['Basic concepts and stoichiometry', 'Experimental techniques', 'Gases', 'Liquids and solids', 'Atomic structure', 'Chemical bonding', 'Thermochemistry', 'Chemical equilibrium', 'Solutions', 'Electrochemistry', 'Reaction kinetics'] },
       { grades: [12, 12], name: 'Grade 12 Chemistry', topics: ['Periodic classification', 's-block and p-block elements', 'd and f-block elements', 'Fundamental principles of organic chemistry', 'Aliphatic hydrocarbons', 'Aromatic hydrocarbons', 'Alkyl halides', 'Alcohols, phenols and ethers', 'Aldehydes and ketones', 'Carboxylic acids', 'Macromolecules', 'Common chemical industries', 'Environmental chemistry'] },
     ],
@@ -193,8 +200,8 @@ export const SUBJECTS: Subject[] = [
     boards: [...ALL],
     grades: [9, 12],
     units: [
-      { grades: [9, 9], name: 'Grade 9 Biology', topics: ['Introduction to biology', 'Solving a biological problem', 'Biodiversity', 'Cells and tissues', 'Cell cycle', 'Enzymes', 'Bioenergetics', 'Nutrition', 'Transport'] },
-      { grades: [10, 10], name: 'Grade 10 Biology', topics: ['Gaseous exchange', 'Homeostasis', 'Coordination and control', 'Support and movement', 'Reproduction', 'Inheritance', 'Man and his environment', 'Biotechnology', 'Pharmacology'] },
+      { grades: [9, 9], name: 'Grade 9 Biology', topics: ['The science of biology', 'Biodiversity', 'The cell', 'Cell cycle', 'Tissues, organs and organ systems', 'Biomolecules', 'Enzymes', 'Bioenergetics', 'Plant physiology', 'Reproduction in plants', 'Biostatistics'] },
+      { grades: [10, 10], name: 'Grade 10 Biology', topics: ['Human digestive system', 'Human respiratory system', 'Human blood circulatory system', 'Human urinary system', 'Coordination', 'Reproduction', 'Inheritance', 'Biotechnology', 'Diseases and immunity', 'Evolution'] },
       { grades: [11, 11], name: 'Grade 11 Biology', topics: ['Cell structure and function', 'Biological molecules', 'Enzymes', 'Bioenergetics', 'Acellular life (viruses)', 'Prokaryotes and protists', 'Fungi', 'Kingdom Plantae', 'Kingdom Animalia', 'Digestion and nutrition', 'Gaseous exchange', 'Transport'] },
       { grades: [12, 12], name: 'Grade 12 Biology', topics: ['Homeostasis', 'Support and movement', 'Nervous coordination', 'Reproduction', 'Growth and development', 'Chromosomes and DNA', 'Cell cycle', 'Variation and genetics', 'Biotechnology', 'Evolution', 'Ecosystems', 'Man and environment'] },
     ],
@@ -207,8 +214,8 @@ export const SUBJECTS: Subject[] = [
     boards: [...ALL],
     grades: [9, 12],
     units: [
-      { grades: [9, 9], name: 'Grade 9 Computer Science', topics: ['Problem solving and algorithms', 'Flowcharts and pseudocode', 'Binary systems and number conversion', 'Networks and the internet', 'Data and privacy', 'Software and hardware'] },
-      { grades: [10, 10], name: 'Grade 10 Computer Science', topics: ['Introduction to programming (C/Python)', 'Variables, data types and operators', 'Control structures', 'Functions', 'Arrays and strings', 'Web basics (HTML)'] },
+      { grades: [9, 9], name: 'Grade 9 Computer Science and Entrepreneurship', topics: ['Introduction to systems', 'Number system', 'Digital systems and logic design', 'System troubleshooting', 'Software system', 'Introduction to computer networks', 'Computational thinking', 'Web development with HTML, CSS and JavaScript', 'Data science and data gathering', 'Emerging technologies', 'Ethical, social and legal concerns in computer usage', 'Entrepreneurship in digital age'] },
+      { grades: [10, 10], name: 'Grade 10 Computer Science', topics: ['Operating systems: structure and services', 'System recovery and advanced maintenance', 'Introduction to Python programming', 'Control structures in Python', 'Introduction to data science', 'Introduction to artificial intelligence and machine learning', 'Applications of AI', 'Digital entrepreneurship'] },
       { grades: [11, 11], name: 'Grade 11 Computer Science', topics: ['Basics of information technology', 'Information networks', 'Data communication', 'Applications of computers', 'Computer architecture', 'Security, copyright and law', 'Windows and word processing', 'Spreadsheets and databases'] },
       { grades: [12, 12], name: 'Grade 12 Computer Science', topics: ['Data basics and database design', 'Normalisation and SQL', 'Microsoft Access', 'C language: fundamentals', 'Input/output and operators', 'Decision and loop structures', 'Functions in C', 'File handling'] },
     ],
